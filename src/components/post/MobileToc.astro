@@ -1,0 +1,106 @@
+---
+/**
+ * MobileToc.astro · 移动端目录
+ * ----------------------------------------------------------------------------
+ * 桌面端的目录在侧栏（Svelte 岛屿，带滚动高亮）；
+ * 窄屏时侧栏整体隐藏，这里用一个原生 <details> 提供零 JS 的替代方案。
+ */
+import Icon from '@/components/common/Icon.astro';
+
+interface Props {
+  headings: { depth: number; slug: string; text: string }[];
+}
+
+const { headings } = Astro.props;
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const minDepth = items.length ? Math.min(...items.map((h) => h.depth)) : 2;
+---
+
+{
+  items.length > 1 && (
+    <details class="mobile-toc" data-accent="clay">
+      <summary>
+        <Icon name="lucide:list-tree" size={14} />
+        目录
+        <span class="count">{items.length}</span>
+      </summary>
+
+      <ol>
+        {items.map((heading) => (
+          <li style={`--indent:${(heading.depth - minDepth) * 14}px`}>
+            <a href={`#${heading.slug}`}>{heading.text}</a>
+          </li>
+        ))}
+      </ol>
+    </details>
+  )
+}
+
+<style>
+  .mobile-toc {
+    display: none;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--bg-soft);
+    padding: var(--s-3) var(--s-4);
+  }
+
+  @media (max-width: 1023px) {
+    .mobile-toc {
+      display: block;
+    }
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    list-style: none;
+    color: var(--text-1);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary .count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--clay-d);
+    background: var(--clay-l);
+    padding: 1px 8px;
+    border-radius: var(--r-pill);
+  }
+
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-top: var(--s-3);
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--line);
+  }
+
+  li {
+    border-left: 2px solid var(--line);
+  }
+
+  a {
+    display: block;
+    padding: 6px 10px 6px calc(10px + var(--indent));
+    color: var(--text-2);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    transition: color var(--t-color), border-color var(--t-color);
+  }
+
+  a:hover {
+    color: var(--clay-d);
+  }
+</style>

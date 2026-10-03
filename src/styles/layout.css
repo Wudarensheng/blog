@@ -1,0 +1,102 @@
+/* ============================================================================
+   layout.css · 页面骨架（Fuwari 式两栏布局）
+   ----------------------------------------------------------------------------
+   只放「骨架」：整站外壳、主栅格、侧栏定位。
+   具体组件（导航栏、卡片、TOC…）的样式写在各自组件里，保持作用域隔离。
+   ========================================================================== */
+
+.site {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* 固定导航栏占位：有 Banner 时导航栏浮在 Banner 之上，不占位 */
+  --top-offset: var(--navbar-h);
+}
+
+body[data-banner='true'] .site {
+  --top-offset: 0px;
+}
+
+.site-main {
+  flex: 1 1 auto;
+  padding-top: var(--top-offset);
+}
+
+/* ----------------------------------------------------------------------------
+   主栅格
+   移动端：单列，主内容在上
+   桌面端：左主内容 + 右侧栏（17.5rem）
+   -------------------------------------------------------------------------- */
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap-card);
+  align-items: start;
+  padding-block: var(--gap-sec) var(--gap-big);
+}
+
+.main-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card);
+}
+
+@media (min-width: 1024px) {
+  .main-grid {
+    grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
+  }
+}
+
+/* ---------------------------------------------------------------- 侧栏 ----- */
+.sidebar {
+  display: none;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-card);
+    position: sticky;
+    top: calc(var(--navbar-h) + var(--s-4));
+    max-height: calc(100vh - var(--navbar-h) - var(--s-8));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* 隐藏侧栏自身的滚动条，避免出现两条滚动条 */
+    scrollbar-width: none;
+    padding-bottom: var(--s-2);
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.sidebar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card);
+}
+
+/* ----------------------------------------------------------------------------
+   文章详情页：正文卡片
+   -------------------------------------------------------------------------- */
+.article-shell {
+  padding: var(--gap-in-lg) var(--gap-in-lg) var(--s-10);
+}
+
+@media (max-width: 768px) {
+  .article-shell {
+    padding: var(--s-5) var(--s-4) var(--s-8);
+  }
+}
+
+/* 窄屏时去掉两侧卡片的「卡片感」，让正文更宽 */
+@media (max-width: 480px) {
+  .article-shell {
+    border-radius: 0;
+    border-inline: 0;
+  }
+}

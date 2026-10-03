@@ -1,0 +1,164 @@
+---
+/**
+ * Banner.astro · 首页横幅
+ * ----------------------------------------------------------------------------
+ * 两层叠出横幅：一整块平色暖白 → 细颗粒噪点纹理 → 可选粒子。
+ * 顶部加一层向下的渐变遮罩，保证浮层导航栏在任何背景上都读得清。
+ */
+import { banner, site } from '@/config';
+import Icon from '@/components/common/Icon.astro';
+import PetalField from '@/components/svelte/PetalField.svelte';
+
+const { enabled, height, image, noise, petals } = banner;
+
+const NOISE =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+---
+
+{
+  enabled && (
+    <section class="banner" style={`--banner-h:${height}vh`} aria-label="站点简介">
+      {image && <img class="photo" src={image} alt="" aria-hidden="true" />}
+      {petals && <PetalField client:idle count={22} opacity={0.34} />}
+      {noise && <span class="noise" style={`background-image:${NOISE}`} aria-hidden="true" />}
+
+      <div class="content container">
+        <p class="eyebrow">
+          <i></i><i></i><i></i>
+          <span>{site.subtitle}</span>
+        </p>
+
+        <h1 class="title">{site.title}</h1>
+
+        <p class="desc">{site.description}</p>
+
+        <a class="scroll-hint" href="#posts" aria-label="跳到文章列表">
+          <span>开始阅读</span>
+          <Icon name="lucide:chevron-down" size={14} />
+        </a>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .banner {
+    position: relative;
+    height: clamp(300px, var(--banner-h), 560px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    isolation: isolate;
+    /* 整块平色：极浅的一层暖白，与页面白底之间用一条细线收边 */
+    background-color: var(--orange-l);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.55;
+    z-index: -1;
+  }
+
+  .noise {
+    position: absolute;
+    inset: 0;
+    opacity: 0.5;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-3);
+    text-align: center;
+    padding-bottom: var(--s-6);
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    border-radius: var(--r-pill);
+    background: var(--surface-veil);
+    border: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .eyebrow i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .eyebrow i:nth-child(1) { background: var(--amber); }
+  .eyebrow i:nth-child(2) { background: var(--orange); }
+  .eyebrow i:nth-child(3) { background: var(--clay); }
+
+  .title {
+    font-size: clamp(2.1rem, 6vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    color: var(--text-1);
+  }
+
+  .desc {
+    max-width: 44ch;
+    color: var(--text-2);
+    font-size: 0.92rem;
+    line-height: 1.85;
+  }
+
+  .scroll-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: var(--s-3);
+    padding: 7px 16px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--line);
+    background: var(--surface-veil);
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: color var(--t-color), transform var(--t-move),
+      border-color var(--t-color), background-color var(--t-color);
+  }
+
+  .scroll-hint:hover {
+    color: var(--clay-d);
+    border-color: color-mix(in srgb, var(--clay-d) 30%, var(--line));
+    background: var(--clay-l);
+    transform: translateY(3px);
+  }
+
+  @media (max-width: 768px) {
+    .banner {
+      height: clamp(240px, 42vh, 380px);
+    }
+
+    .desc {
+      font-size: 0.85rem;
+    }
+  }
+</style>

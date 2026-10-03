@@ -1,0 +1,153 @@
+---
+/**
+ * BaseLayout.astro · 全站外壳
+ * ----------------------------------------------------------------------------
+ * 负责：<head> 元信息、主题初始化（避免闪白）、固定导航栏、移动端抽屉、
+ *       页脚，以及所有全局岛屿（进度条 / 搜索 / 灯箱 / 回到顶部 / 正文增强）。
+ */
+import '@/styles/app.css';
+import { ClientRouter } from 'astro:transitions';
+import { site, banner as bannerConf } from '@/config';
+import Navbar from '@/components/layout/Navbar.astro';
+import MobileDrawer from '@/components/layout/MobileDrawer.astro';
+import SiteFooter from '@/components/layout/Footer.astro';
+import ReadingProgress from '@/components/svelte/ReadingProgress.svelte';
+import BackToTop from '@/components/svelte/BackToTop.svelte';
+import SearchModal from '@/components/svelte/SearchModal.svelte';
+import Lightbox from '@/components/svelte/Lightbox.svelte';
+import HeaderBehavior from '@/components/svelte/HeaderBehavior.svelte';
+import ProseEnhance from '@/components/svelte/ProseEnhance.svelte';
+import Reveal from '@/components/svelte/Reveal.svelte';
+import ImageFade from '@/components/svelte/ImageFade.svelte';
+
+interface Props {
+  /** 页面标题；不传则只用站点标题 */
+  title?: string;
+  description?: string;
+  /** 社交卡片图，默认 /og.png */
+  image?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  /** 本页是否自带 Banner（决定导航栏是浮层还是实心） */
+  hasBanner?: boolean;
+  /** 本页是否包含 .prose 正文，需要代码块 / 表格 / 外链增强 */
+  prose?: boolean;
+  /** 文章发布时间，供 og:article 使用 */
+  publishedTime?: Date;
+  updatedTime?: Date;
+}
+
+const {
+  title,
+  description = site.description,
+  image = '/og.png',
+  type = 'website',
+  noindex = false,
+  hasBanner = false,
+  prose = false,
+  publishedTime,
+  updatedTime,
+} = Astro.props;
+
+const pageTitle = title ? `${title} | ${site.title}` : `${site.title} · ${site.subtitle}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? `https://${Astro.url.host}`);
+const ogImage = new URL(image, Astro.site ?? `https://${Astro.url.host}`);
+const bannerOn = hasBanner && bannerConf.enabled;
+---
+
+<!doctype html>
+<!--
+  页面跳转用 Astro 的 ClientRouter（View Transitions）：
+  导航栏、抽屉、页脚、各个全局岛屿都标了 transition:persist，切页时保留，
+  只有主内容重新渲染 —— 所以切页不会闪、也不会重新下载脚本。
+
+  整页的默认交叉淡入关掉了（transition:animate="none"）：
+  主内容自己有一段 page-enter 上浮动画，两者叠加会显得糊。
+-->
+<html lang={site.lang} data-theme-mode="auto" transition:animate="none">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/favicon-180.png" />
+    <link rel="alternate" type="application/rss+xml" title={site.title} href="/rss.xml" />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={site.title} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="zh_CN" />
+    {publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
+    {updatedTime && <meta property="article:modified_time" content={updatedTime.toISOString()} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!--
+      主题初始化：必须同步执行且早于首次绘制，否则会出现亮色闪一下再变暗。
+      三态约定：localStorage 无值 = 跟随系统。
+      顺便挂上 html.js —— 动效层只在 JS 可用时才把元素设为初始隐藏，
+      这样关掉 JavaScript 的读者看到的仍是完整页面。
+    -->
+    <script is:inline>
+      (function () {
+        document.documentElement.classList.add('js');
+        try {
+          var stored = localStorage.getItem('theme');
+          var mode =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          if (mode === 'dark') document.documentElement.classList.add('dark');
+          document.documentElement.dataset.themeMode = stored || 'auto';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', mode === 'dark' ? '#141110' : '#ffffff');
+        } catch (e) {
+          /* localStorage 被禁用时静默降级为亮色 */
+        }
+      })();
+    </script>
+  </head>
+
+  <body data-banner={bannerOn ? 'true' : 'false'}>
+    <ClientRouter />
+    <a class="skip-link" href="#main">跳到主要内容</a>
+
+    <div class="site">
+      <ReadingProgress client:load transition:persist />
+      <Navbar transparent={bannerOn} transition:persist />
+      <MobileDrawer transition:persist />
+
+      <main id="main" class="site-main">
+        <slot />
+      </main>
+
+      <SiteFooter />
+    </div>
+
+    <BackToTop client:idle transition:persist />
+    <SearchModal client:idle transition:persist />
+    <Lightbox client:idle transition:persist />
+    <HeaderBehavior client:load transition:persist />
+    {prose && <ProseEnhance client:idle />}
+    <Reveal client:load />
+    <ImageFade client:idle />
+  </body>
+</html>

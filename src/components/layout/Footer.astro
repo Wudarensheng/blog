@@ -1,0 +1,129 @@
+---
+/**
+ * Footer.astro · 页脚
+ */
+import { footer, site } from '@/config';
+import Dots from '@/components/common/Dots.astro';
+
+const year = new Date().getFullYear();
+const range = footer.since < year ? `${footer.since}–${year}` : `${year}`;
+---
+
+<footer class="site-footer">
+  <div class="container inner">
+    <div class="left">
+      <Dots small />
+      <p class="copy">
+        © {range}
+        <a href="/about/" class="link-quiet">{site.title}</a>
+        <span class="sep">·</span>
+        保留所有权利
+      </p>
+    </div>
+
+    <div class="right">
+      <p class="built">
+        Astro <span class="amp">&amp;</span> Svelte
+        <span class="sep">·</span>
+        主题「橙白」
+      </p>
+
+      <nav class="links" aria-label="页脚导航">
+        {
+          footer.links.map((item) => (
+            <a href={item.href} class="link-quiet">
+              {item.label}
+            </a>
+          ))
+        }
+      </nav>
+
+      {
+        footer.icp.text && (
+          <a class="icp link-quiet" href={footer.icp.href} rel="noopener noreferrer" target="_blank">
+            {footer.icp.text}
+          </a>
+        )
+      }
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: auto;
+    border-top: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    padding-block: var(--s-6);
+  }
+
+  .left,
+  .right {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+  }
+
+  .copy,
+  .built,
+  .icp {
+    font-size: var(--fs-meta);
+    color: var(--text-3);
+  }
+
+  .copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .copy a {
+    color: var(--text-2);
+    font-weight: 700;
+  }
+
+  .sep {
+    color: var(--line);
+    margin-inline: 2px;
+  }
+
+  .amp {
+    color: var(--orange-d);
+    font-family: var(--font-mono);
+  }
+
+  .built {
+    font-family: var(--font-mono);
+    letter-spacing: var(--ls-mono);
+  }
+
+  .links {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+
+  .links a {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  @media (max-width: 768px) {
+    .inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--s-2);
+    }
+  }
+</style>

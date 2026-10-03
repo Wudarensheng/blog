@@ -1,0 +1,61 @@
+---
+/**
+ * AnnouncementCard.astro · 侧栏公告
+ * 内容来自 src/config.ts 的 sidebar.announcement。
+ */
+import { sidebar } from '@/config';
+import Icon from '@/components/common/Icon.astro';
+
+const { enabled, title, content, accent } = sidebar.announcement;
+---
+
+{
+  enabled && (
+    <section class="card card-pad announcement" data-accent={accent}>
+      <header class="head">
+        <Icon name="lucide:sparkles" size={14} />
+        <h2>{title}</h2>
+      </header>
+      <div class="body">
+        {content.map((paragraph) => (
+          <p>{paragraph}</p>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .announcement {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--a-d);
+  }
+
+  .head h2 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--a-d);
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  .body p {
+    color: var(--text-2);
+    font-size: 0.8rem;
+    line-height: 1.78;
+  }
+</style>

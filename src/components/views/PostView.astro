@@ -1,0 +1,304 @@
+---
+/**
+ * PostView.astro · 文章详情
+ * ----------------------------------------------------------------------------
+ * 结构参考 Fuwari：封面 → 头部（分类 / 标题 / 元信息 / 标签）→ 正文
+ *                    → 版权 → 上下篇 → 相关文章 → 评论挂载点
+ * 桌面端目录在右侧栏（MainLayout 的 headings），窄屏回退到 <details> 版本。
+ */
+import { render } from 'astro:content';
+import { Image } from 'astro:assets';
+import { comments as commentsConf, posts as postsConf } from '@/config';
+import { accentFromKey } from '@/lib/accent';
+import { longDate, relative, ymd } from '@/lib/format';
+import {
+  categoryHref,
+  getAdjacent,
+  getRelated,
+  readingTime,
+  tagHref,
+  wordCount,
+  type Post,
+} from '@/lib/posts';
+import MainLayout from '@/layouts/MainLayout.astro';
+import CoverArt from '@/components/common/CoverArt.astro';
+import Dots from '@/components/common/Dots.astro';
+import Icon from '@/components/common/Icon.astro';
+import LicenseCard from '@/components/post/LicenseCard.astro';
+import MobileToc from '@/components/post/MobileToc.astro';
+import PostNav from '@/components/post/PostNav.astro';
+import RelatedPosts from '@/components/post/RelatedPosts.astro';
+import ProseEnhance from '@/components/svelte/ProseEnhance.svelte';
+
+interface Props {
+  post: Post;
+  all: Post[];
+}
+
+const { post, all } = Astro.props;
+const { data } = post;
+
+const { Content, headings } = await render(post);
+
+const accent = data.accent ?? accentFromKey(data.title);
+const minutes = readingTime(post);
+const words = wordCount(post);
+const adjacent = postsConf.prevNext ? getAdjacent(all, post.id) : {};
+const related = getRelated(all, post, 3);
+const tocHeadings = headings.map(({ depth, slug, text }) => ({ depth, slug, text }));
+---
+
+<MainLayout
+  title={data.title}
+  description={data.description}
+  type="article"
+  prose
+  headings={headings}
+  publishedTime={data.published}
+  updatedTime={data.updated}
+  image={data.cover ? data.cover.src : '/og.png'}
+>
+  <article class="article card" data-accent={accent}>
+    <div class="cover">
+      {
+        data.cover ? (
+          <Image
+            src={data.cover}
+            alt={data.coverAlt ?? data.title}
+            widths={[480, 960, 1440]}
+            sizes="(max-width: 768px) 100vw, 820px"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+        ) : (
+          <CoverArt accent={accent} seed={data.title} ratio="21 / 9" />
+        )
+      }
+    </div>
+
+    <div class="article-shell">
+      <header class="head">
+        <nav class="crumbs" aria-label="面包屑">
+          <a href="/">首页</a>
+          <Icon name="lucide:chevron-right" size={11} />
+          <a href={categoryHref(data.category)}>{data.category}</a>
+          <Icon name="lucide:chevron-right" size={11} />
+          <span aria-current="page">正文</span>
+        </nav>
+
+        <h1>{data.title}</h1>
+
+        <p class="lede">{data.description}</p>
+
+        <div class="meta-row">
+          <span class="meta" title={longDate(data.published)}>
+            <Icon name="lucide:calendar-days" size={13} />
+            <time datetime={data.published.toISOString()}>{ymd(data.published)}</time>
+            <em>({relative(data.published)})</em>
+          </span>
+
+          <span class="meta-sep">·</span>
+
+          <span class="meta">
+            <Icon name="lucide:clock" size={13} />
+            {minutes} 分钟 · {words} 字
+          </span>
+
+          {
+            data.updated && (
+              <>
+                <span class="meta-sep">·</span>
+                <span class="meta" title="最后更新">
+                  <Icon name="lucide:pencil" size={13} />
+                  {ymd(data.updated)}
+                </span>
+              </>
+            )
+          }
+
+          <span class="meta-dots"><Dots small /></span>
+        </div>
+
+        {
+          data.tags.length > 0 && (
+            <ul class="tags">
+              {data.tags.map((tag) => (
+                <li>
+                  <a class="pill pill-accent pill-link" href={tagHref(tag)}>
+                    #{tag}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </header>
+
+      <MobileToc headings={tocHeadings} />
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      <LicenseCard
+        title={data.title}
+        published={data.published}
+        updated={data.updated}
+        override={data.license}
+      />
+    </div>
+  </article>
+
+  {postsConf.prevNext && <PostNav adjacent={adjacent} />}
+
+  <RelatedPosts posts={related} />
+
+  <section class="comments card" aria-label="评论">
+    {
+      commentsConf.enabled && commentsConf.provider ? (
+        <div class="provider" set:html={commentsConf.provider} />
+      ) : (
+        <div class="placeholder">
+          <Icon name="lucide:message-circle" size={22} />
+          <p>{commentsConf.note}</p>
+          <span class="where">挂载点：src/config.ts → comments</span>
+        </div>
+      )
+    }
+  </section>
+
+  <ProseEnhance client:idle />
+</MainLayout>
+
+<style>
+  .article {
+    overflow: hidden;
+  }
+
+  .cover {
+    border-bottom: 1px solid var(--line);
+    background: var(--a-l);
+  }
+
+  .cover :global(img) {
+    width: 100%;
+    aspect-ratio: 21 / 9;
+    object-fit: cover;
+  }
+
+  /* 与卡片保持一致：暗色主题下压暗真实封面图 */
+  :global(html.dark) .cover :global(img) {
+    filter: brightness(0.72) saturate(0.9);
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    padding-bottom: var(--s-6);
+    margin-bottom: var(--s-6);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .crumbs a {
+    transition: color var(--t-color);
+  }
+
+  .crumbs a:hover {
+    color: var(--a-d);
+  }
+
+  h1 {
+    font-size: clamp(1.45rem, 3vw, 1.85rem);
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.35;
+    color: var(--text-1);
+  }
+
+  .lede {
+    color: var(--text-2);
+    font-size: 0.88rem;
+    line-height: 1.8;
+    padding-left: var(--s-4);
+    border-left: 2px solid var(--a);
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .meta-row .meta {
+    font-size: 0.68rem;
+  }
+
+  .meta-row em {
+    font-style: normal;
+    color: var(--text-3);
+    opacity: 0.75;
+  }
+
+  .meta-dots {
+    margin-left: auto;
+    opacity: 0.7;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* --------------------------------------------------------------- 评论 --- */
+  .comments {
+    padding: var(--gap-in-lg);
+  }
+
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-10) var(--s-4);
+    color: var(--text-3);
+    text-align: center;
+  }
+
+  .placeholder p {
+    font-size: 0.85rem;
+    color: var(--text-2);
+  }
+
+  .where {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+  }
+
+  @media (max-width: 768px) {
+    .meta-dots {
+      display: none;
+    }
+
+    .head {
+      padding-bottom: var(--s-4);
+      margin-bottom: var(--s-5);
+    }
+  }
+</style>

@@ -1,0 +1,128 @@
+---
+/**
+ * PageHeader.astro · 内页页头（归档 / 分类 / 标签 / 关于 / 友链共用）
+ */
+import Dots from '@/components/common/Dots.astro';
+import Icon from '@/components/common/Icon.astro';
+import type { Accent } from '@/config';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** 面包屑，最后一项是当前页 */
+  crumbs?: { label: string; href?: string }[];
+  accent?: Accent;
+  /** 右侧的计数徽标 */
+  count?: number;
+}
+
+const { title, description, crumbs = [], accent = 'clay', count } = Astro.props;
+---
+
+<header class="page-head card" data-accent={accent}>
+  <span class="corner"><Dots size={8} /></span>
+
+  {
+    crumbs.length > 0 && (
+      <nav class="crumbs" aria-label="面包屑">
+        {crumbs.map((crumb, i) => (
+          <>
+            {i > 0 && <Icon name="lucide:chevron-right" size={11} />}
+            {crumb.href ? (
+              <a href={crumb.href}>{crumb.label}</a>
+            ) : (
+              <span aria-current="page">{crumb.label}</span>
+            )}
+          </>
+        ))}
+      </nav>
+    )
+  }
+
+  <div class="row">
+    <h1>{title}</h1>
+    {count !== undefined && <span class="count">{count}</span>}
+  </div>
+
+  {description && <p class="desc">{description}</p>}
+
+  <slot />
+</header>
+
+<style>
+  .page-head {
+    position: relative;
+    padding: var(--gap-in-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .corner {
+    position: absolute;
+    top: var(--gap-in-lg);
+    right: var(--gap-in-lg);
+    opacity: 0.7;
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .crumbs a {
+    transition: color var(--t-color);
+  }
+
+  .crumbs a:hover {
+    color: var(--a-d);
+  }
+
+  .crumbs span[aria-current] {
+    color: var(--text-2);
+  }
+
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-3);
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 2.6vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.35;
+  }
+
+  .count {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    letter-spacing: var(--ls-mono);
+    color: var(--a-d);
+    background: var(--a-l);
+    padding: 2px 9px;
+    border-radius: var(--r-pill);
+  }
+
+  .desc {
+    max-width: 66ch;
+    color: var(--text-2);
+    font-size: 0.88rem;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 768px) {
+    .corner {
+      display: none;
+    }
+  }
+</style>

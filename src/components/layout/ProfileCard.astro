@@ -1,0 +1,231 @@
+---
+/**
+ * ProfileCard.astro · 侧栏个人信息卡
+ * ----------------------------------------------------------------------------
+ * 头像外圈是 6.1 的彩色圆环：一圈平色实心描边。
+ * 悬停时圆环轻微旋转 10° 并放大 1.03（0.5s，不弹跳）。
+ */
+import { profile, socials, site } from '@/config';
+import { accentByIndex } from '@/lib/accent';
+import Icon from '@/components/common/Icon.astro';
+import Dots from '@/components/common/Dots.astro';
+
+interface Props {
+  /** 三个统计数字，按 profile.stats 的顺序传入 */
+  stats: number[];
+}
+
+const { stats } = Astro.props;
+---
+
+<section class="profile card" aria-label="关于站长">
+  <div class="head">
+    <a class="avatar-link" href="/about/" aria-label={`关于 ${profile.name}`}>
+      <span class="avatar-ring">
+        <img src={profile.avatar} alt={profile.name} width="84" height="84" loading="lazy" />
+      </span>
+    </a>
+
+    <div class="ident">
+      <h2 class="name">{profile.name}</h2>
+      <p class="handle">{profile.handle}</p>
+    </div>
+  </div>
+
+  <p class="bio">{profile.bio}</p>
+
+  <ul class="stats">
+    {
+      profile.stats.map((item, i) => (
+        <li data-accent={accentByIndex(i)}>
+          <span class="value">{stats[i] ?? 0}</span>
+          <span class="label">{item.label}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="divider">
+    <Dots small />
+  </div>
+
+  <ul class="socials">
+    {
+      socials.map((item, i) => (
+        <li data-accent={item.accent ?? accentByIndex(i)}>
+          <a href={item.href} title={item.name} aria-label={item.name}>
+            <Icon name={item.icon} size={16} />
+            <span>{item.name}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="site-line">
+    <Icon name="lucide:link" size={12} />
+    {site.url.replace(/^https?:\/\//, '')}
+  </p>
+</section>
+
+<style>
+  .profile {
+    padding: var(--gap-in-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+  }
+
+  .avatar-link {
+    flex: none;
+    display: block;
+    border-radius: 50%;
+  }
+
+  .avatar-ring {
+    display: block;
+    padding: 3px;
+    border-radius: 50%;
+    background: var(--ring);
+    transition: transform var(--t-ring);
+  }
+
+  .avatar-link:hover .avatar-ring {
+    transform: rotate(10deg) scale(1.03);
+  }
+
+  .avatar-ring img {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    border: 3px solid var(--card);
+    object-fit: cover;
+  }
+
+  .ident {
+    min-width: 0;
+  }
+
+  .name {
+    font-size: 1.06rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+
+  .handle {
+    margin-top: 3px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  .bio {
+    color: var(--text-2);
+    font-size: 0.83rem;
+    line-height: 1.78;
+  }
+
+  /* 三个统计：数字用等宽、彩色；标签用弱文字 */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-2);
+  }
+
+  .stats li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 9px 4px;
+    border-radius: var(--r-sm);
+    background: var(--a-l);
+    transition: transform var(--t-move);
+  }
+
+  .stats li:hover {
+    transform: translateY(-2px);
+  }
+
+  .stats .value {
+    font-family: var(--font-mono);
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--a-d);
+    line-height: 1.25;
+  }
+
+  .stats .label {
+    font-size: var(--fs-label);
+    color: var(--text-3);
+  }
+
+  .divider {
+    display: flex;
+    justify-content: center;
+    opacity: 0.7;
+  }
+
+  /* 社交项悬停：整体右移 3px，背景染上对应浅色 */
+  .socials {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .socials a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border-radius: var(--r-sm);
+    color: var(--text-2);
+    font-size: var(--fs-meta);
+    transition: transform var(--t-move), background-color var(--t-color),
+      color var(--t-color);
+  }
+
+  .socials a:hover {
+    transform: translateX(3px);
+    background: var(--a-l);
+    color: var(--a-d);
+  }
+
+  .socials :global(svg) {
+    flex: none;
+  }
+
+  .socials span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .site-line {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  @media (max-width: 768px) {
+    .avatar-ring img {
+      width: 54px;
+      height: 54px;
+    }
+  }
+</style>

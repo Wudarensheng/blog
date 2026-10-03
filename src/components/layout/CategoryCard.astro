@@ -1,0 +1,148 @@
+---
+/**
+ * CategoryCard.astro · 侧栏分类
+ * 每个分类配一条按占比伸缩的细进度条，颜色按三站轮转。
+ */
+import { sidebar } from '@/config';
+import { accentByIndex } from '@/lib/accent';
+import { categoryHref, type FacetItem } from '@/lib/posts';
+import Icon from '@/components/common/Icon.astro';
+
+interface Props {
+  items: FacetItem[];
+}
+
+const { items } = Astro.props;
+const shown = items.slice(0, sidebar.categoriesLimit);
+const max = Math.max(1, ...shown.map((item) => item.count));
+---
+
+{
+  shown.length > 0 && (
+    <section class="card card-pad cat-card" aria-label="分类">
+      <header class="head">
+        <Icon name="lucide:folder" size={14} />
+        <h2>分类</h2>
+        <a class="more" href="/categories/">
+          全部
+          <Icon name="lucide:chevron-right" size={12} />
+        </a>
+      </header>
+
+      <ul>
+        {shown.map((item, i) => (
+          <li data-accent={accentByIndex(i)}>
+            <a href={categoryHref(item.name)}>
+              <span class="name">{item.name}</span>
+              <span class="count">{item.count}</span>
+              <span class="bar" style={`--w:${Math.round((item.count / max) * 100)}%`} />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .cat-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-3);
+  }
+
+  .head h2 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .more {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+    transition: color var(--t-color);
+  }
+
+  .more:hover {
+    color: var(--a-d);
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  a {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--s-2);
+    padding: 7px 9px;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    transition: background-color var(--t-color);
+  }
+
+  a:hover {
+    background: var(--a-l);
+  }
+
+  .name {
+    position: relative;
+    z-index: 1;
+    color: var(--text-2);
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color var(--t-color);
+  }
+
+  a:hover .name {
+    color: var(--a-d);
+  }
+
+  .count {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  /* 占比条：贴在行底部。最长也只用 72% 宽度，
+     否则计数最多的那一项会被误读成一条分隔线。 */
+  .bar {
+    position: absolute;
+    left: 8px;
+    bottom: 2px;
+    height: 2px;
+    width: calc(var(--w) * 0.72);
+    border-radius: var(--r-pill);
+    background: var(--a);
+    opacity: 0.45;
+    transition: opacity var(--t-color), width 0.4s var(--ease);
+  }
+
+  a:hover .bar {
+    opacity: 1;
+  }
+</style>

@@ -1,0 +1,392 @@
+---
+/**
+ * MobileDrawer.astro · 移动端导航抽屉
+ * ----------------------------------------------------------------------------
+ * 只在 < 1024px 出现。开关状态由 HeaderBehavior.svelte 接管：
+ * 初始带 inert 属性，打开时移除，保证键盘 Tab 不会跑到隐藏的抽屉里。
+ */
+import { nav, profile, site, socials } from '@/config';
+import { accentByIndex } from '@/lib/accent';
+import Icon from '@/components/common/Icon.astro';
+import Dots from '@/components/common/Dots.astro';
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href.replace(/\/$/, ''));
+---
+
+<div class="drawer-layer">
+  <div class="drawer-backdrop" data-drawer-backdrop data-open="false" aria-hidden="true"></div>
+
+  <aside
+    id="mobile-drawer"
+    class="drawer"
+    data-drawer
+    data-open="false"
+    inert
+    aria-label="移动端导航"
+  >
+  <header class="top">
+    <span class="logo">{site.logoText}</span>
+    <div class="names">
+      <strong>{site.title}</strong>
+      <small>{site.subtitle}</small>
+    </div>
+    <button type="button" class="icon-btn" data-drawer-toggle aria-label="关闭菜单">
+      <Icon name="lucide:x" size={18} />
+    </button>
+  </header>
+
+  <div class="scroll">
+    <a class="who" href="/about/">
+      <span class="ring">
+        <img src={profile.avatar} alt={profile.name} width="46" height="46" loading="lazy" />
+      </span>
+      <span class="who-text">
+        <strong>{profile.name}</strong>
+        <small>{profile.handle}</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="移动端主导航">
+      {
+        nav.map((item, i) =>
+          item.children?.length ? (
+            /* 移动端不做下拉：直接把子项平铺出来，少一次点击 */
+            <div class="nav-group" data-accent={accentByIndex(i)}>
+              <p class="nav-group-title">
+                {item.icon && <Icon name={item.icon} size={16} />}
+                <span>{item.label}</span>
+              </p>
+              {item.children.map((child) => (
+                <a
+                  class="is-child"
+                  href={child.href}
+                  target={child.external ? '_blank' : undefined}
+                  rel={child.external ? 'noopener noreferrer' : undefined}
+                >
+                  {child.icon && <Icon name={child.icon} size={15} />}
+                  <span>{child.label}</span>
+                  <Icon
+                    name={child.external ? 'lucide:external-link' : 'lucide:chevron-right'}
+                    size={13}
+                    class="chev"
+                  />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <a
+              href={item.href}
+              class:list={['drawer-link', { active: isActive(item.href ?? '') }]}
+              aria-current={isActive(item.href ?? '') ? 'page' : undefined}
+              data-accent={accentByIndex(i)}
+            >
+              {item.icon && <Icon name={item.icon} size={16} />}
+              <span>{item.label}</span>
+              <Icon name="lucide:chevron-right" size={14} class="chev" />
+            </a>
+          ),
+        )
+      }
+    </nav>
+
+    <div class="divider">
+      <Dots small />
+    </div>
+
+    <ul class="socials">
+      {
+        socials.map((item, i) => (
+          <li data-accent={item.accent ?? accentByIndex(i)}>
+            <a href={item.href}>
+              <Icon name={item.icon} size={17} />
+              <span>{item.name}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <button type="button" class="search-cta btn" data-search-trigger>
+      <Icon name="lucide:search" size={15} />
+      搜索文章
+    </button>
+  </div>
+  </aside>
+</div>
+
+<style>
+  /* 抽屉关闭时整体被平移到视口右侧之外。
+     如果直接挂在 body 上，这个「画外」元素仍然会撑大可滚动区域，
+     所以在外面套一层 fixed + overflow:hidden 的裁剪层。
+     裁剪层本身不接收指针事件，交互靠子元素各自开启。 */
+  .drawer-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 108;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--surface-sunk);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--t-move);
+  }
+
+  .drawer-backdrop[data-open='true'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    width: min(340px, 88vw);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border-left: 1px solid var(--line);
+    box-shadow: var(--shadow-pop);
+    transform: translateX(102%);
+    pointer-events: none;
+    transition: transform var(--t-move);
+    overscroll-behavior: contain;
+  }
+
+  .drawer[data-open='true'] {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  @media (min-width: 1024px) {
+    .drawer-layer {
+      display: none;
+    }
+  }
+
+  /* --------------------------------------------------------------- 顶部 --- */
+  .top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 var(--s-4);
+    height: var(--navbar-h);
+    flex: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .logo {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--r-xs);
+    background: var(--brand);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex: none;
+  }
+
+  .names {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  .names strong {
+    color: var(--text-1);
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .names small {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+    text-transform: uppercase;
+  }
+
+  .top .icon-btn {
+    margin-left: auto;
+  }
+
+  /* --------------------------------------------------------------- 内容 --- */
+  .scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    padding: var(--s-4);
+  }
+
+  .who {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-3);
+    border-radius: var(--r-md);
+    background: var(--bg-soft);
+    transition: background-color var(--t-color);
+  }
+
+  .who:hover {
+    background: var(--clay-l);
+  }
+
+  .ring {
+    padding: 2px;
+    border-radius: 50%;
+    background: var(--ring);
+    flex: none;
+  }
+
+  .ring img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+    object-fit: cover;
+  }
+
+  .who-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .who-text strong {
+    color: var(--text-1);
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .who-text small {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--r-sm);
+    color: var(--text-2);
+    font-size: 0.88rem;
+    transition: background-color var(--t-color), color var(--t-color),
+      transform var(--t-move);
+  }
+
+  .nav a:hover {
+    background: var(--a-l);
+    color: var(--a-d);
+    transform: translateX(3px);
+  }
+
+  .nav a.active {
+    background: var(--bg-soft);
+    color: var(--text-1);
+    font-weight: 700;
+  }
+
+  .nav a.active :global(svg:first-child) {
+    color: var(--a-d);
+  }
+
+  .nav :global(.chev) {
+    margin-left: auto;
+    opacity: 0.45;
+  }
+
+  /* 平铺出来的分组：标题不可点，子项左缩进一条细线 */
+  .nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 4px;
+  }
+
+  .nav-group-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 4px;
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .nav-group :global(.is-child) {
+    margin-left: 14px;
+    padding-block: 8px;
+    font-size: 0.83rem;
+    border-left: 2px solid var(--line);
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  }
+
+  .nav-group :global(.is-child:hover) {
+    border-left-color: var(--a);
+  }
+
+  .divider {
+    display: flex;
+    justify-content: center;
+    opacity: 0.7;
+  }
+
+  .socials {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .socials a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: var(--r-sm);
+    background: var(--bg-soft);
+    color: var(--text-2);
+    font-size: var(--fs-meta);
+    transition: background-color var(--t-color), color var(--t-color),
+      transform var(--t-move);
+  }
+
+  .socials a:hover {
+    background: var(--a-l);
+    color: var(--a-d);
+    transform: translateX(3px);
+  }
+
+  .search-cta {
+    width: 100%;
+    margin-top: auto;
+  }
+</style>

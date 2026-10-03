@@ -1,0 +1,56 @@
+{
+  "name": "orange-white",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "橙白 — 清新克制的 Astro + Svelte 博客主题（Fuwari 式布局）",
+  "license": "MIT",
+  "author": "Wudarensheng",
+  "homepage": "https://github.com/Wudarensheng/blog#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Wudarensheng/blog.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Wudarensheng/blog/issues"
+  },
+  "keywords": [
+    "astro",
+    "astro-theme",
+    "blog",
+    "blog-theme",
+    "svelte",
+    "svelte5",
+    "static-site"
+  ],
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "icons": "node scripts/check-icons.mjs",
+    "test": "node scripts/test-callouts.mjs",
+    "verify": "node scripts/verify-output.mjs",
+    "shots": "node scripts/make-debug-pages.mjs",
+    "migrate": "node scripts/migrate-fuwari.mjs",
+    "brand": "python scripts/make-brand.py",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.1",
+    "@astrojs/mdx": "^8.0.2",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/svelte": "^9.0.1",
+    "@iconify-json/lucide": "^1.2.138",
+    "@iconify-json/simple-icons": "^1.2.98",
+    "astro": "^7.3.5",
+    "github-slugger": "^2.0.0",
+    "sharp": "^0.35.5",
+    "svelte": "^5.57.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.5",
+    "typescript": "^5.9.3"
+  }
+}

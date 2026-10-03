@@ -1,0 +1,83 @@
+---
+/**
+ * MainLayout.astro · Fuwari 式两栏骨架
+ * ----------------------------------------------------------------------------
+ * 桌面端：左侧主内容 + 右侧 17.5rem 侧栏（sticky，自身可滚动）
+ * 移动端：单列，侧栏整体隐藏，导航与社交收进顶部抽屉
+ *
+ * 侧栏顺序：个人信息 → 目录（仅文章页）→ 公告 → 分类 → 标签
+ */
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+import ProfileCard from '@/components/layout/ProfileCard.astro';
+import AnnouncementCard from '@/components/layout/AnnouncementCard.astro';
+import CategoryCard from '@/components/layout/CategoryCard.astro';
+import TagCard from '@/components/layout/TagCard.astro';
+import TableOfContents from '@/components/svelte/TableOfContents.svelte';
+import { countByCategory, countByTag, getAllPosts } from '@/lib/posts';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  hasBanner?: boolean;
+  prose?: boolean;
+  publishedTime?: Date;
+  updatedTime?: Date;
+  /** 文章页传入标题树，侧栏就会出现目录 */
+  headings?: MarkdownHeading[];
+  /** 是否显示分类 / 标签卡（归档等页面可关掉） */
+  showFacets?: boolean;
+}
+
+const {
+  headings,
+  showFacets = true,
+  publishedTime,
+  updatedTime,
+  ...layout
+} = Astro.props;
+
+const posts = await getAllPosts();
+const categories = countByCategory(posts);
+const tags = countByTag(posts);
+
+const stats = [posts.length, categories.length, tags.length];
+const tocHeadings = (headings ?? []).map(({ depth, slug, text }) => ({ depth, slug, text }));
+---
+
+<BaseLayout {...layout} publishedTime={publishedTime} updatedTime={updatedTime}>
+  <!-- 通栏 Banner（首页）放在栅格之外 -->
+  <slot name="banner" />
+
+  <div class="container main-grid">
+    <div class="main-col">
+      <slot />
+    </div>
+
+    <aside class="sidebar" aria-label="侧栏">
+      <div class="sidebar-stack">
+        <ProfileCard stats={stats} />
+
+        {
+          tocHeadings.length > 0 && (
+            <div class="card card-pad">
+              <TableOfContents client:load headings={tocHeadings} />
+            </div>
+          )
+        }
+
+        <AnnouncementCard />
+
+        {showFacets && (
+          <>
+            <CategoryCard items={categories} />
+            <TagCard items={tags} />
+          </>
+        )}
+      </div>
+    </aside>
+  </div>
+</BaseLayout>

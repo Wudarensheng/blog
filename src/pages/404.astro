@@ -1,0 +1,148 @@
+---
+/**
+ * 404
+ */
+import { nav, site } from '@/config';
+import MainLayout from '@/layouts/MainLayout.astro';
+import Icon from '@/components/common/Icon.astro';
+
+interface Shortcut {
+  href: string;
+  label: string;
+  icon: string;
+}
+
+/**
+ * 快捷入口：首页打头，其余取导航里真正的页面链接。
+ * 下拉父项（如「监测」）没有 href，而且是站外地址，这里一律排除 ——
+ * 早先用 `filter(item => item.href !== '/')` 会把它们带进来，
+ * 渲染出一个 href 为 undefined 的空按钮。
+ */
+const links: Shortcut[] = [
+  { href: '/', label: '首页', icon: 'lucide:house' },
+  ...nav.flatMap((item): Shortcut[] => {
+    if (!item.href || item.href === '/' || item.children?.length) return [];
+    return [{ href: item.href, label: item.label, icon: item.icon ?? 'lucide:arrow-right' }];
+  }),
+];
+---
+
+<MainLayout title="页面走丢了" description="找不到这个页面。" noindex showFacets={false}>
+  <section class="nf card" data-accent="orange">
+    <p class="code">
+      <span>4</span><span>0</span><span>4</span>
+    </p>
+
+    <h1>这个页面不存在</h1>
+
+    <p class="desc">
+      它可能被重命名、被删掉，或者从来就没有存在过。
+      要不回到 <a href="/">{site.title}</a> 首页重新找找？
+    </p>
+
+    <div class="actions">
+      {
+        links.map((item, i) => (
+          <a
+            class="btn"
+            href={item.href}
+            data-accent={i % 3 === 0 ? 'orange' : i % 3 === 1 ? 'amber' : 'clay'}
+          >
+            <Icon name={item.icon} size={14} />
+            {item.label}
+          </a>
+        ))
+      }
+    </div>
+
+    <button type="button" class="search-hint" data-search-trigger>
+      <Icon name="lucide:search" size={14} />
+      或者直接搜索
+      <kbd>Ctrl</kbd>
+      <kbd>K</kbd>
+    </button>
+  </section>
+</MainLayout>
+
+<style>
+  .nf {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-16) var(--s-6);
+    text-align: center;
+  }
+
+  /* 三个数字依次染上琥珀、正橙、陶土 */
+  .code {
+    display: flex;
+    gap: 2px;
+    font-family: var(--font-mono);
+    font-size: clamp(3.4rem, 12vw, 5.6rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+
+  .code span:nth-child(1) {
+    color: var(--orange);
+  }
+  .code span:nth-child(2) {
+    color: var(--amber);
+  }
+  .code span:nth-child(3) {
+    color: var(--clay);
+  }
+
+  h1 {
+    font-size: var(--fs-hero);
+    font-weight: 700;
+    letter-spacing: var(--ls-hero);
+  }
+
+  .desc {
+    max-width: 46ch;
+    color: var(--text-2);
+    font-size: 0.88rem;
+    line-height: 1.85;
+  }
+
+  .desc a {
+    color: var(--clay-d);
+    font-weight: 700;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--s-2);
+    margin-top: var(--s-2);
+  }
+
+  .search-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: var(--s-3);
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    transition: color var(--t-color);
+  }
+
+  .search-hint:hover {
+    color: var(--clay-d);
+  }
+
+  .search-hint kbd {
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--card);
+    font-size: 0.9em;
+  }
+</style>

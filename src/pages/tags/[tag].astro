@@ -1,0 +1,33 @@
+---
+import { countByTag, getAllPosts } from '@/lib/posts';
+import FacetView from '@/components/views/FacetView.astro';
+
+export async function getStaticPaths() {
+  const posts = await getAllPosts();
+  const tags = countByTag(posts);
+
+  return tags.map((item) => ({
+    params: { tag: item.slug },
+    props: { slug: item.slug },
+  }));
+}
+
+const { slug } = Astro.props;
+
+const posts = await getAllPosts();
+const tags = countByTag(posts);
+const facet = tags.find((item) => item.slug === slug);
+
+if (!facet) {
+  throw new Error(`[tags/[tag]] 找不到标签 "${slug}"`);
+}
+---
+
+<FacetView
+  {facet}
+  siblings={tags}
+  siblingBase="/tags/"
+  match="tag"
+  parent={{ label: '标签', href: '/tags/' }}
+  accent="amber"
+/>

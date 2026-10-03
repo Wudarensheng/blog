@@ -1,0 +1,119 @@
+---
+/**
+ * 分类总览
+ */
+import { accentByIndex } from '@/lib/accent';
+import { countByCategory, getAllPosts } from '@/lib/posts';
+import MainLayout from '@/layouts/MainLayout.astro';
+import PageHeader from '@/components/common/PageHeader.astro';
+import Icon from '@/components/common/Icon.astro';
+
+const posts = await getAllPosts();
+const categories = countByCategory(posts);
+const max = Math.max(1, ...categories.map((c) => c.count));
+---
+
+<MainLayout title="分类" description="按主题浏览全部文章。">
+  <PageHeader
+    title="分类"
+    description={`共 ${categories.length} 个分类，覆盖 ${posts.length} 篇文章。每篇文章只属于一个分类，方便按主题线性阅读。`}
+    crumbs={[{ label: '首页', href: '/' }, { label: '分类' }]}
+    accent="orange"
+    count={categories.length}
+  />
+
+  <div class="grid">
+    {
+      categories.map((item, i) => (
+        <a class="cell card card-hover" data-accent={accentByIndex(i)} href={`/categories/${item.slug}/`}>
+          <div class="row">
+            <Icon name="lucide:folder-open" size={16} />
+            <h2>{item.name}</h2>
+            <span class="count">{item.count}</span>
+          </div>
+
+          <div class="bar">
+            <span style={`width:${Math.round((item.count / max) * 100)}%`} />
+          </div>
+
+          <span class="more arrow-slide">
+            查看文章
+            <Icon name="lucide:arrow-right" size={13} />
+          </span>
+        </a>
+      ))
+    }
+  </div>
+</MainLayout>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--gap-card);
+  }
+
+  .cell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    padding: var(--gap-in-lg);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--a-d);
+  }
+
+  h2 {
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    letter-spacing: var(--ls-mono);
+    color: var(--a-d);
+    background: var(--a-l);
+    padding: 1px 9px;
+    border-radius: var(--r-pill);
+  }
+
+  .bar {
+    height: 3px;
+    border-radius: var(--r-pill);
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--a);
+    transition: width 0.4s var(--ease);
+  }
+
+  .more {
+    margin-top: auto;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+    transition: color var(--t-color);
+  }
+
+  .cell:hover .more {
+    color: var(--a-d);
+  }
+</style>

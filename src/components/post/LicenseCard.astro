@@ -1,0 +1,130 @@
+---
+/**
+ * LicenseCard.astro · 文末版权声明
+ */
+import { posts as postsConf, site } from '@/config';
+import { ymd } from '@/lib/format';
+import Icon from '@/components/common/Icon.astro';
+
+interface Props {
+  title: string;
+  published: Date;
+  updated?: Date;
+  /** frontmatter 可单独覆盖 */
+  override?: boolean;
+}
+
+const { title, published, updated, override } = Astro.props;
+const { license } = postsConf;
+
+const enabled = override ?? license.enabled;
+---
+
+{
+  enabled && (
+    <aside class="license card" data-accent="amber" aria-label="版权声明">
+      <header>
+        <Icon name="lucide:info" size={14} />
+        <h2>版权声明</h2>
+      </header>
+
+      <p class="body">
+        本文《<strong>{title}</strong>》采用
+        <a href={license.url} target="_blank" rel="noopener noreferrer">{license.name}</a>
+        许可协议。转载请注明出处
+        <a href={site.url} target="_blank" rel="noopener noreferrer">{site.title}</a>。
+      </p>
+
+      <dl class="dates">
+        <div>
+          <dt>发布于</dt>
+          <dd>{ymd(published)}</dd>
+        </div>
+        {
+          updated && updated.valueOf() !== published.valueOf() && (
+            <div>
+              <dt>更新于</dt>
+              <dd>{ymd(updated)}</dd>
+            </div>
+          )
+        }
+      </dl>
+    </aside>
+  )
+}
+
+<style>
+  .license {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    padding: var(--s-4) var(--s-5);
+    border-radius: var(--r-md);
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--a-d);
+  }
+
+  header h2 {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--a-d);
+  }
+
+  .body {
+    color: var(--text-2);
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+
+  .body strong {
+    color: var(--text-1);
+    font-weight: 700;
+  }
+
+  .body a {
+    color: var(--a-d);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--a) 60%, transparent);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+    transition: text-decoration-color var(--t-color), text-decoration-thickness var(--t-move);
+  }
+
+  .body a:hover {
+    text-decoration-color: var(--a-d);
+    text-decoration-thickness: 2px;
+  }
+
+  .dates {
+    display: flex;
+    align-items: center;
+    gap: var(--s-5);
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--line);
+  }
+
+  .dates div {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  dt {
+    font-size: var(--fs-label);
+    color: var(--text-3);
+  }
+
+  dd {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-2);
+  }
+</style>

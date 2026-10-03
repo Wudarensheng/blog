@@ -1,0 +1,24 @@
+---
+import { getAllPosts } from '@/lib/posts';
+import PostView from '@/components/views/PostView.astro';
+
+export async function getStaticPaths() {
+  const posts = await getAllPosts();
+
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { id: post.id },
+  }));
+}
+
+const { id } = Astro.props;
+
+const all = await getAllPosts();
+const post = all.find((item) => item.id === id);
+
+if (!post) {
+  throw new Error(`[posts/[...slug]] 找不到文章 "${id}"`);
+}
+---
+
+<PostView post={post} all={all} />

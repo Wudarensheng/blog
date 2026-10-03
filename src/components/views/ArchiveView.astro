@@ -1,0 +1,193 @@
+---
+/**
+ * ArchiveView.astro · 归档
+ * 按年份分组的时间线：左边一条竖线，右边每个年份一组。
+ */
+import { ymd } from '@/lib/format';
+import { accentByIndex } from '@/lib/accent';
+import { getAllPosts, groupByYear, readingTime } from '@/lib/posts';
+import MainLayout from '@/layouts/MainLayout.astro';
+import PageHeader from '@/components/common/PageHeader.astro';
+import Icon from '@/components/common/Icon.astro';
+
+const posts = await getAllPosts();
+const groups = groupByYear(posts);
+
+// 按年份给整组分配点缀色，保证三站均衡
+const accentOfYear = (index: number) => accentByIndex(index);
+---
+
+<MainLayout title="归档" description="按时间倒序排列的全部文章。">
+  <PageHeader
+    title="归档"
+    description={`从 ${groups.at(-1)?.year ?? new Date().getFullYear()} 年至今，一共 ${posts.length} 篇文章。`}
+    crumbs={[{ label: '首页', href: '/' }, { label: '归档' }]}
+    accent="amber"
+    count={posts.length}
+  />
+
+  <div class="timeline">
+    {
+      groups.map((group, gi) => (
+        <section class="year" data-accent={accentOfYear(gi)} aria-label={`${group.year} 年`}>
+          <header class="year-head">
+            <span class="dot" />
+            <h2>{group.year}</h2>
+            <span class="count">{group.posts.length} 篇</span>
+          </header>
+
+          <ul class="entries">
+            {group.posts.map((post) => (
+              <li>
+                <a href={`/posts/${post.id}/`} class="entry">
+                  <time datetime={post.data.published.toISOString()}>{ymd(post.data.published)}</time>
+                  <span class="title">{post.data.title}</span>
+                  <span class="category pill pill-quiet">{post.data.category}</span>
+                  <span class="minutes">
+                    <Icon name="lucide:clock" size={12} />
+                    {readingTime(post)} 分钟
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</MainLayout>
+
+<style>
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-card);
+  }
+
+  .year {
+    position: relative;
+    padding-left: var(--s-5);
+  }
+
+  /* 时间线主竖线 */
+  .year::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 14px;
+    bottom: -14px;
+    width: 1px;
+    background: var(--line);
+  }
+
+  .year:last-child::before {
+    display: none;
+  }
+
+  .year-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding-bottom: var(--s-3);
+  }
+
+  .dot {
+    position: absolute;
+    left: calc(-1 * var(--s-5) + 1px);
+    top: 6px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--a);
+    box-shadow: 0 0 0 3px var(--bg);
+  }
+
+  .year-head h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-1);
+  }
+
+  .year-head .count {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  .entries {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--s-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--card);
+    box-shadow: var(--shadow-rest);
+  }
+
+  .entry {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--s-3);
+    padding: 10px var(--s-3);
+    border-radius: var(--r-sm);
+    transition: background-color var(--t-color), transform var(--t-move);
+  }
+
+  .entry:hover {
+    background: var(--a-l);
+    transform: translateX(3px);
+  }
+
+  .entry time {
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  .entry .title {
+    color: var(--text-1);
+    font-size: 0.88rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color var(--t-color);
+  }
+
+  .entry:hover .title {
+    color: var(--a-d);
+  }
+
+  .entry .category {
+    background: var(--bg-soft);
+    color: var(--text-3);
+  }
+
+  .entry .minutes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  @media (max-width: 768px) {
+    .entry {
+      grid-template-columns: auto minmax(0, 1fr);
+      row-gap: 4px;
+    }
+
+    .entry .category,
+    .entry .minutes {
+      display: none;
+    }
+  }
+</style>

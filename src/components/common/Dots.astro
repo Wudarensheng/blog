@@ -1,0 +1,31 @@
+---
+/**
+ * Dots.astro · 三点装饰（DESIGN.md 6.2）
+ * 三个小圆点并排，依次是琥珀、正橙、陶土。用于 logo、卡片角落、章节标记。
+ */
+interface Props {
+  /** 圆点直径，6~9px */
+  size?: number;
+  /** 是否显示为「紧贴标题」的小尺寸 */
+  small?: boolean;
+  class?: string;
+}
+
+const { size, small = false, class: className = '' } = Astro.props;
+const px = size ?? (small ? 5 : 7);
+---
+
+<span
+  class:list={['dots', small && 'dots-sm', className]}
+  aria-hidden="true"
+  style={`--dot-size:${px}px`}
+>
+  <i></i><i></i><i></i>
+</span>
+
+<style>
+  .dots i {
+    width: var(--dot-size);
+    height: var(--dot-size);
+  }
+</style>

@@ -1,0 +1,140 @@
+---
+import { accentByIndex } from '@/lib/accent';
+import { countByCategory, countByTag, getAllPosts } from '@/lib/posts';
+import MainLayout from '@/layouts/MainLayout.astro';
+import PageHeader from '@/components/common/PageHeader.astro';
+
+const posts = await getAllPosts();
+const tags = countByTag(posts);
+const categories = countByCategory(posts);
+
+const max = Math.max(1, ...tags.map((t) => t.count));
+const min = Math.min(...tags.map((t) => t.count), 0);
+const span = Math.max(1, max - min);
+---
+
+<MainLayout title="标签" description="按关键词浏览全部文章。">
+  <PageHeader
+    title="标签"
+    description={`共 ${tags.length} 个标签。字号与颜色深浅表示使用频率——用得越多的标签越显眼，但依然克制。`}
+    crumbs={[{ label: '首页', href: '/' }, { label: '标签' }]}
+    accent="amber"
+    count={tags.length}
+  />
+
+  <div class="cloud card card-pad">
+    {
+      tags.map((item, i) => {
+        // 频率映射到 0.86 ~ 1.06rem，避免出现夸张的字号差
+        const weight = (item.count - min) / span;
+        const size = (0.86 + weight * 0.2).toFixed(3);
+        return (
+          <a
+            class="tag"
+            data-accent={accentByIndex(i)}
+            href={`/tags/${item.slug}/`}
+            style={`--size:${size}rem;--weight:${Math.round(weight * 100)}`}
+          >
+            <span class="hash">#</span>
+            {item.name}
+            <span class="count">{item.count}</span>
+          </a>
+        );
+      })
+    }
+  </div>
+
+  <section class="cats card card-pad">
+    <header class="head">
+      <h2>顺带一提，还有这些分类</h2>
+    </header>
+    <ul>
+      {
+        categories.map((item, i) => (
+          <li data-accent={accentByIndex(i)}>
+            <a class="pill pill-quiet pill-link" href={`/categories/${item.slug}/`}>
+              {item.name}
+              <span class="n">{item.count}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</MainLayout>
+
+<style>
+  .cloud {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-2) var(--s-3);
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    padding: 5px 12px;
+    border-radius: var(--r-pill);
+    background: var(--bg-soft);
+    color: var(--text-2);
+    font-size: var(--size);
+    line-height: 1.6;
+    transition: background-color var(--t-color), color var(--t-color),
+      transform var(--t-move);
+  }
+
+  .tag:hover {
+    background: var(--a-l);
+    color: var(--a-d);
+    transform: translateY(-2px);
+  }
+
+  .hash {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--a-d);
+    opacity: 0.75;
+  }
+
+  .count {
+    font-family: var(--font-mono);
+    font-size: 0.72em;
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  .tag:hover .count {
+    color: var(--a-d);
+  }
+
+  .cats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .head h2 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .cats ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .cats .pill {
+    gap: 6px;
+  }
+
+  .cats .n {
+    font-size: 0.9em;
+    color: var(--text-3);
+  }
+</style>

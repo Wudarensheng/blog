@@ -1,0 +1,280 @@
+---
+/**
+ * PostCard.astro · 文章卡片
+ * ----------------------------------------------------------------------------
+ * 首页 / 分类 / 标签 / 相关文章共用。
+ * 「整卡可点」用 stretched-link 实现：标题是唯一的 <a>，通过 ::after 铺满卡片，
+ * 标签链接再抬高层级，避免嵌套 <a> 的非法结构。
+ */
+import { Image } from 'astro:assets';
+import type { Accent } from '@/config';
+import { ymd } from '@/lib/format';
+import { postHref, readingTime, tagHref, type Post } from '@/lib/posts';
+import Dots from '@/components/common/Dots.astro';
+import Icon from '@/components/common/Icon.astro';
+import CoverArt from '@/components/common/CoverArt.astro';
+
+interface Props {
+  post: Post;
+  accent: Accent;
+  /** compact：横向小卡片，用于相关文章 / 搜索结果 */
+  variant?: 'default' | 'compact' | 'featured';
+  /** 是否显示封面 */
+  showCover?: boolean;
+}
+
+const { post, accent, variant = 'default', showCover = true } = Astro.props;
+
+const { title, description, published, category, tags, cover, coverAlt, pinned } = post.data;
+const href = postHref(post);
+const minutes = readingTime(post);
+const ratio = variant === 'featured' ? '21 / 9' : '16 / 9';
+---
+
+<article
+  class:list={['post-card', 'card', 'card-hover', `is-${variant}`]}
+  data-accent={accent}
+>
+  {
+    showCover && (
+      <div class="cover">
+        {cover ? (
+          <Image
+            src={cover}
+            alt={coverAlt ?? title}
+            widths={[320, 640, 960]}
+            sizes={variant === 'compact' ? '200px' : '(max-width: 768px) 92vw, 760px'}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <CoverArt accent={accent} seed={title} ratio={ratio} />
+        )}
+      </div>
+    )
+  }
+
+  <div class="body">
+    <div class="eyebrow">
+      <span class="pill pill-accent">{category}</span>
+      {pinned && (
+        <span class="pill pin">
+          <Icon name="lucide:pin" size={11} stroke={2} />
+          置顶
+        </span>
+      )}
+      <span class="spacer"></span>
+      <span class="corner-dots"><Dots small /></span>
+    </div>
+
+    <h3 class="title">
+      <a href={href}>{title}</a>
+    </h3>
+
+    <p class="desc">{description}</p>
+
+    <div class="foot">
+      <span class="meta">
+        <Icon name="lucide:calendar-days" size={13} />
+        <time datetime={published.toISOString()}>{ymd(published)}</time>
+      </span>
+      <span class="meta-sep">·</span>
+      <span class="meta">
+        <Icon name="lucide:clock" size={13} />
+        {minutes} 分钟
+      </span>
+
+      {
+        tags.length > 0 && (
+          <span class="tags">
+            {tags.slice(0, 3).map((tag) => (
+              <a class="pill pill-quiet pill-link" href={tagHref(tag)} data-accent={accent}>
+                #{tag}
+              </a>
+            ))}
+          </span>
+        )
+      }
+    </div>
+  </div>
+</article>
+
+<style>
+  .post-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* 让整张卡片可点，同时不破坏标签链接 */
+  .title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+  }
+
+  .tags a,
+  .tags :global(a) {
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+    background: var(--a-l);
+  }
+
+  .cover :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    aspect-ratio: 16 / 9;
+    transition: transform 0.4s var(--ease);
+  }
+
+  .post-card.is-featured .cover :global(img) {
+    aspect-ratio: 21 / 9;
+  }
+
+  .post-card:hover .cover :global(img) {
+    transform: scale(1.025);
+  }
+
+  /* 暗色主题下真实封面图会显得过亮，压一点亮度与饱和度让它融进深底 */
+  :global(html.dark) .cover :global(img) {
+    filter: brightness(0.72) saturate(0.9);
+  }
+
+  /* compact 变体不显示封面顶部 */
+  .post-card.is-compact {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .post-card.is-compact .cover {
+    flex: 0 0 148px;
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+  }
+
+  .post-card.is-compact .cover :global(img),
+  .post-card.is-compact .cover :global(.cover-art) {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    padding: var(--gap-in-lg);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .is-compact .body {
+    padding: var(--s-4);
+    gap: var(--s-2);
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-height: 20px;
+  }
+
+  .eyebrow .spacer {
+    flex: 1;
+  }
+
+  .pin {
+    background: var(--orange-l);
+    color: var(--orange-d);
+  }
+
+  .corner-dots {
+    opacity: 0.55;
+    transition: opacity var(--t-move);
+  }
+
+  .post-card:hover .corner-dots {
+    opacity: 1;
+  }
+
+  .title {
+    font-size: 1.16rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.45;
+    color: var(--text-1);
+    transition: color var(--t-color);
+  }
+
+  .is-compact .title {
+    font-size: 0.98rem;
+    line-height: 1.5;
+  }
+
+  .post-card:hover .title {
+    color: var(--a-d);
+  }
+
+  .desc {
+    color: var(--text-2);
+    font-size: 0.9rem;
+    line-height: 1.75;
+    /* 摘要最多三行 */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .is-compact .desc {
+    font-size: 0.84rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .foot {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin-top: auto;
+    padding-top: var(--s-2);
+  }
+
+  .foot .meta {
+    font-size: 0.68rem;
+  }
+
+  .tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .is-compact .tags {
+    display: none;
+  }
+
+  @media (max-width: 480px) {
+    .post-card.is-compact .cover {
+      flex-basis: 104px;
+    }
+
+    .tags {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+</style>

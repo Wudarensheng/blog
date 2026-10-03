@@ -1,0 +1,136 @@
+/* ============================================================================
+   motion.css · 动效层
+   ----------------------------------------------------------------------------
+   全站的动画都收在这里，方便一眼看全、也方便整体关掉。
+
+   三条硬约束（DESIGN.md 第 7 节）：
+     · 单次动画 ≤ 0.6s，缓动统一用 --ease，不用回弹
+     · 不让多个元素同时大幅运动 —— 位移最多 12px，并且严格错峰
+     · prefers-reduced-motion 时全部停用
+
+   「只在 JS 可用时才隐藏」是这里最关键的一条：初始的透明状态挂在
+   html.js 下面，所以关掉 JavaScript 的读者看到的仍然是完整可读的页面。
+   ========================================================================== */
+
+/* ------------------------------------------------------------ 滚动揭示 --- */
+html.js [data-reveal] {
+  transition:
+    opacity 0.42s var(--ease),
+    transform 0.42s var(--ease);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+/* 首屏之外的元素：淡入 + 上浮 */
+html.js [data-reveal='full'] {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+/* 首屏内的元素：只上浮，不淡入。
+   这样它从第一帧起就是「已绘制」的，不会把 LCP 往后拖。 */
+html.js [data-reveal='soft'] {
+  transform: translateY(10px);
+}
+
+html.js [data-reveal][data-revealed='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ------------------------------------------------------------ 图片淡入 --- */
+/* 同样只在 JS 可用时隐藏；ImageFade.svelte 会补上 data-loaded */
+html.js img[data-fade] {
+  opacity: 0;
+  transition: opacity 0.45s var(--ease);
+}
+
+html.js img[data-fade][data-loaded='true'] {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------ 页面进入 --- */
+/* 每次导航后主内容轻微上浮一次。不用 SPA 路由，纯 CSS 动画。 */
+html.js .site-main {
+  animation: page-enter 0.38s var(--ease) both;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* ------------------------------------------------------------ 微交互 --- */
+/* logo 方块：悬停时轻轻歪一下 */
+.brand:hover .logo,
+.drawer .top .logo {
+  transition: transform var(--t-ring);
+}
+
+.brand:hover .logo {
+  transform: rotate(-8deg);
+}
+
+/* 三点装饰：父级悬停时依次轻微放大，像被按了一下 */
+.dots i {
+  transition: transform var(--t-move);
+}
+
+.card:hover .dots i,
+.friend:hover .dots i,
+.cover-art:hover .dots i {
+  transform: scale(1.25);
+}
+
+.card:hover .dots i:nth-child(2),
+.friend:hover .dots i:nth-child(2),
+.cover-art:hover .dots i:nth-child(2) {
+  transition-delay: 40ms;
+}
+
+.card:hover .dots i:nth-child(3),
+.friend:hover .dots i:nth-child(3),
+.cover-art:hover .dots i:nth-child(3) {
+  transition-delay: 80ms;
+}
+
+/* 标签胶囊：悬停时轻微抬起并染色 */
+.pill-link {
+  transition: background-color var(--t-color), color var(--t-color),
+    transform var(--t-move), box-shadow var(--t-move);
+}
+
+.pill-link:hover {
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--a-d) 14%, transparent);
+}
+
+/* ------------------------------------------------------------ 降级 --- */
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-reveal],
+  html.js [data-reveal='full'],
+  html.js [data-reveal='soft'] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  html.js img[data-fade] {
+    opacity: 1;
+    transition: none;
+  }
+
+  html.js .site-main {
+    animation: none;
+  }
+
+  .brand:hover .logo {
+    transform: none;
+  }
+
+  .card:hover .dots i,
+  .friend:hover .dots i,
+  .cover-art:hover .dots i {
+    transform: none;
+  }
+}

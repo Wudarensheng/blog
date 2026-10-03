@@ -1,0 +1,333 @@
+---
+/**
+ * Navbar.astro · 固定顶部导航栏
+ * ----------------------------------------------------------------------------
+ * 结构由 Astro 渲染（品牌图标留在构建期，不进客户端包）；
+ * 滚动状态与抽屉开关交给 HeaderBehavior.svelte 通过 data-* 属性驱动。
+ *
+ * 两种外观：
+ *   浮层（首页有 Banner 时）—— 透明，压在 Banner 之上
+ *   毛玻璃（滚动后 / 其它页面）—— 半透明 + blur + 细分隔线
+ */
+import { nav, site } from '@/config';
+import Icon from '@/components/common/Icon.astro';
+import ThemeToggle from '@/components/svelte/ThemeToggle.svelte';
+
+interface Props {
+  /** 页面顶部是否有 Banner，决定初始是否为浮层 */
+  transparent?: boolean;
+}
+
+const { transparent = false } = Astro.props;
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href.replace(/\/$/, ''));
+---
+
+<header
+  class="navbar"
+  data-navbar
+  data-scrolled="false"
+  data-transparent={transparent ? 'true' : 'false'}
+>
+  <div class="container inner">
+    <a class="brand" href="/" aria-label={`${site.title} 首页`}>
+      <span class="logo">{site.logoText}</span>
+      <span class="names">
+        <strong>{site.title}</strong>
+        <small>{site.subtitle}</small>
+      </span>
+    </a>
+
+    <nav class="links" aria-label="主导航">
+      {
+        nav.map((item) =>
+          item.children?.length ? (
+            /* 下拉：纯 CSS 驱动，:hover 与 :focus-within 都能展开，不需要 JS */
+            <div class="nav-drop">
+              <button type="button" class="nav-drop-trigger" aria-haspopup="true">
+                {item.icon && <Icon name={item.icon} size={15} />}
+                <span>{item.label}</span>
+                <Icon name="lucide:chevron-down" size={13} class="caret" />
+              </button>
+
+              <div class="nav-drop-panel">
+                {item.children.map((child) => (
+                  <a
+                    href={child.href}
+                    target={child.external ? '_blank' : undefined}
+                    rel={child.external ? 'noopener noreferrer' : undefined}
+                  >
+                    {child.icon && <Icon name={child.icon} size={14} />}
+                    <span>{child.label}</span>
+                    {child.external && <Icon name="lucide:external-link" size={12} class="ext" />}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <a
+              href={item.href}
+              class:list={['nav-link', { active: isActive(item.href ?? '') }]}
+              aria-current={isActive(item.href ?? '') ? 'page' : undefined}
+            >
+              {item.icon && <Icon name={item.icon} size={15} />}
+              <span>{item.label}</span>
+            </a>
+          ),
+        )
+      }
+    </nav>
+
+    <div class="actions">
+      <button type="button" class="icon-btn" data-search-trigger aria-label="搜索（Ctrl K）">
+        <Icon name="lucide:search" size={17} />
+      </button>
+
+      <ThemeToggle client:load />
+
+      <button
+        type="button"
+        class="icon-btn menu-btn"
+        data-drawer-toggle
+        aria-label="打开菜单"
+        aria-controls="mobile-drawer"
+      >
+        <Icon name="lucide:menu" size={18} />
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    height: var(--navbar-h);
+    border-bottom: 1px solid transparent;
+    transition: background-color var(--t-move), border-color var(--t-move),
+      box-shadow var(--t-move), backdrop-filter var(--t-move);
+  }
+
+  /* 毛玻璃：滚动之后或页面本身没有 Banner 时 */
+  .navbar[data-scrolled='true'],
+  .navbar[data-transparent='false'] {
+    background: var(--surface-glass);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border-bottom-color: var(--line);
+  }
+
+  .inner {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+  }
+
+  /* --------------------------------------------------------------- 品牌 --- */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+    min-width: 0;
+  }
+
+  .logo {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-xs);
+    background: var(--brand);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    flex: none;
+    box-shadow: var(--shadow-rest);
+  }
+
+  .names {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  .names strong {
+    color: var(--text-1);
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+
+  .names small {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+    text-transform: uppercase;
+  }
+
+  /* --------------------------------------------------------------- 链接 --- */
+  .links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+  }
+
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 11px;
+    border-radius: var(--r-sm);
+    color: var(--text-2);
+    font-size: 0.82rem;
+    transition: color var(--t-color), background-color var(--t-color);
+  }
+
+  .links a:hover {
+    color: var(--text-1);
+    background: var(--bg-soft);
+  }
+
+  /* 当前页：浅色底 + 深色文字，不用彩色边框 */
+  .links a.active {
+    color: var(--text-1);
+    background: var(--bg-soft);
+    font-weight: 700;
+  }
+
+  .links a.active :global(svg) {
+    color: var(--clay-d);
+  }
+
+  /* ------------------------------------------------------------- 下拉 --- */
+  /* 纯 CSS 展开：hover 与 focus-within 各管一半，键盘也能用 */
+  .nav-drop {
+    position: relative;
+  }
+
+  .nav-drop-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 11px;
+    border-radius: var(--r-sm);
+    color: var(--text-2);
+    font-size: 0.82rem;
+    transition: color var(--t-color), background-color var(--t-color);
+  }
+
+  .nav-drop:hover .nav-drop-trigger,
+  .nav-drop:focus-within .nav-drop-trigger {
+    color: var(--text-1);
+    background: var(--bg-soft);
+  }
+
+  .nav-drop .caret {
+    transition: transform var(--t-move);
+  }
+
+  .nav-drop:hover .caret,
+  .nav-drop:focus-within .caret {
+    transform: rotate(180deg);
+  }
+
+  .nav-drop-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    min-width: 168px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-pop);
+
+    /* 关着的时候不能用 display:none —— 那样就没有过渡了 */
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, -6px);
+    transition: opacity var(--t-move), transform var(--t-move), visibility var(--t-move);
+  }
+
+  .nav-drop:hover .nav-drop-panel,
+  .nav-drop:focus-within .nav-drop-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+  }
+
+  .nav-drop-panel a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--r-sm);
+    color: var(--text-2);
+    font-size: 0.79rem;
+    white-space: nowrap;
+    transition: color var(--t-color), background-color var(--t-color),
+      transform var(--t-move);
+  }
+
+  .nav-drop-panel a:hover {
+    color: var(--clay-d);
+    background: var(--clay-l);
+    transform: translateX(3px);
+  }
+
+  .nav-drop-panel :global(.ext) {
+    margin-left: auto;
+    opacity: 0.5;
+  }
+
+  /* --------------------------------------------------------------- 操作 --- */
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+  }
+
+  .links + .actions {
+    margin-left: var(--s-2);
+  }
+
+  .menu-btn {
+    display: none;
+  }
+
+  @media (max-width: 1023px) {
+    .links {
+      display: none;
+    }
+
+    .menu-btn {
+      display: inline-flex;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .names small {
+      display: none;
+    }
+
+    .inner {
+      gap: var(--s-2);
+    }
+  }
+</style>

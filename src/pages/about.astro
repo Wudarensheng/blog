@@ -1,0 +1,383 @@
+---
+/**
+ * 关于
+ * ----------------------------------------------------------------------------
+ * 内容迁移自 Fuwari 的 src/pages/about.astro 与 src/content/spec/about.md。
+ * 原页面用 Astro / Fuwari / Cloudflare 的品牌色区分三张技术栈卡片，
+ * 这里按 DESIGN.md 换成橙色系三站，文案与结构保持不变。
+ */
+import { profile, site } from '@/config';
+import { accentByIndex } from '@/lib/accent';
+import MainLayout from '@/layouts/MainLayout.astro';
+import PageHeader from '@/components/common/PageHeader.astro';
+import Icon from '@/components/common/Icon.astro';
+
+const contact = [
+  { label: 'GitHub', href: 'https://github.com/Wudarensheng', icon: 'simple-icons:github' },
+  {
+    label: 'Bilibili',
+    href: 'https://space.bilibili.com/3546673733175817',
+    icon: 'simple-icons:bilibili',
+  },
+  { label: 'Email', href: 'mailto:wdrs666@foxmail.com', icon: 'lucide:mail' },
+];
+
+const stack = [
+  {
+    name: 'Astro',
+    role: '构建框架',
+    icon: 'simple-icons:astro',
+    desc: '一个现代化的前端框架，用于构建以内容为中心的快速网站。',
+  },
+  {
+    name: 'Fuwari',
+    role: '博客主题',
+    icon: 'lucide:layout-template',
+    desc: '本站原先使用的高度可定制的 Astro 博客主题。',
+  },
+  {
+    name: 'Cloudflare',
+    role: '托管服务',
+    icon: 'simple-icons:cloudflare',
+    desc: '一个全球性的云平台，提供 CDN、DNS 以及 Pages 和 Workers 等无服务器功能。',
+  },
+];
+
+const repos = [
+  { label: '本站仓库', repo: 'Wudarensheng/blog.wudarensheng.top' },
+  { label: '上游仓库（Fuwari）', repo: 'saicaca/fuwari' },
+];
+---
+
+<MainLayout title="关于" description={site.description} prose>
+  <PageHeader
+    title="关于"
+    description="一页讲清楚我是谁、这个站怎么搭的。"
+    crumbs={[{ label: '首页', href: '/' }, { label: '关于' }]}
+    accent="orange"
+  >
+    <div class="who">
+      <span class="ring">
+        <img src={profile.avatar} alt={profile.name} width="64" height="64" />
+      </span>
+      <div class="who-text">
+        <strong>{profile.name}</strong>
+        <small>普普通通的初中生</small>
+      </div>
+    </div>
+
+    <ul class="contact">
+      {
+        contact.map((item, i) => (
+          <li data-accent={accentByIndex(i)}>
+            <a href={item.href} target="_blank" rel="noopener noreferrer">
+              <Icon name={item.icon} size={15} />
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </PageHeader>
+
+  <article class="card card-pad">
+    <div class="prose">
+      <p>
+        Hi! 我是<strong>{profile.name}</strong>，一个精神状态良好的神人初中生，也是一个平平无奇的 UP 主……
+      </p>
+      <p>{profile.bio}</p>
+
+      <h2>关于这个站</h2>
+      <p>本站代码已经开源至 GitHub，基于 Astro + Fuwari。</p>
+
+      <div class="repos">
+        {
+          repos.map((item, i) => (
+            <a
+              class="repo"
+              data-accent={accentByIndex(i)}
+              href={`https://github.com/${item.repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icon name="simple-icons:github" size={16} />
+              <span class="repo-text">
+                <small>{item.label}</small>
+                <strong>{item.repo}</strong>
+              </span>
+              <Icon name="lucide:external-link" size={13} class="ext" />
+            </a>
+          ))
+        }
+      </div>
+
+      <h2>技术栈</h2>
+      <div class="stack">
+        {
+          stack.map((item, i) => (
+            <div class="stack-item" data-accent={accentByIndex(i)}>
+              <div class="stack-head">
+                <span class="stack-icon">
+                  <Icon name={item.icon} size={20} />
+                </span>
+                <span class="stack-name">
+                  <strong>{item.name}</strong>
+                  <small>{item.role}</small>
+                </span>
+              </div>
+              <p>{item.desc}</p>
+            </div>
+          ))
+        }
+      </div>
+
+      <h2>找到我</h2>
+      <ul class="plain">
+        {
+          contact.map((item) => (
+            <li>
+              <Icon name={item.icon} size={14} />
+              <a href={item.href} target="_blank" rel="noopener noreferrer">
+                {item.href.replace(/^mailto:/, '')}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <hr />
+
+      <blockquote>
+        <p>白色是画布，橙是那支笔。少用彩色，多留空白，让内容自己说话。</p>
+      </blockquote>
+    </div>
+  </article>
+</MainLayout>
+
+<style>
+  .who {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    margin-top: var(--s-2);
+    padding-top: var(--s-5);
+    border-top: 1px solid var(--line);
+  }
+
+  .ring {
+    padding: 3px;
+    border-radius: 50%;
+    background: var(--ring);
+    flex: none;
+  }
+
+  .ring img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid var(--card);
+    object-fit: cover;
+  }
+
+  .who-text strong {
+    display: block;
+    color: var(--text-1);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .who-text small {
+    color: var(--text-3);
+    font-size: var(--fs-meta);
+  }
+
+  .contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin-top: var(--s-2);
+  }
+
+  .contact li {
+    display: inline-flex;
+  }
+
+  .contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: var(--a-l);
+    color: var(--a-d);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    transition: transform var(--t-move), border-color var(--t-color);
+  }
+
+  .contact a:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--a-d) 30%, var(--line));
+  }
+
+  /* ------------------------------------------------------------ 仓库卡片 --- */
+  .repos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--s-3);
+    margin-top: var(--s-4);
+  }
+
+  .repo {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--bg-soft);
+    transition: transform var(--t-move), border-color var(--t-color);
+  }
+
+  .repo:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--a-d) 26%, var(--line));
+  }
+
+  .repo-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .repo-text small {
+    color: var(--text-3);
+    font-size: var(--fs-label);
+  }
+
+  .repo-text strong {
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .repo :global(.ext) {
+    margin-left: auto;
+    color: var(--text-3);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity var(--t-move), transform var(--t-move);
+  }
+
+  .repo:hover :global(.ext) {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* ------------------------------------------------------------ 技术栈 --- */
+  .stack {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--s-3);
+    margin-top: var(--s-4);
+  }
+
+  .stack-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    padding: var(--gap-in-lg);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--a);
+    border-radius: var(--r-md);
+    background: var(--card);
+    transition: transform var(--t-move), box-shadow var(--t-move);
+  }
+
+  .stack-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+  }
+
+  .stack-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+
+  .stack-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex: none;
+    border-radius: var(--r-sm);
+    background: var(--a-l);
+    color: var(--a-d);
+  }
+
+  .stack-name {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+
+  .stack-name strong {
+    color: var(--text-1);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .stack-name small {
+    color: var(--text-3);
+    font-size: var(--fs-meta);
+  }
+
+  .stack-item p {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+
+  /* ------------------------------------------------------------ 联系方式 --- */
+  .plain {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    margin-top: var(--s-3);
+    padding-left: 0;
+  }
+
+  .plain li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-3);
+  }
+
+  .plain li::before {
+    display: none;
+  }
+
+  .plain a {
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+  }
+
+  @media (max-width: 480px) {
+    .repos,
+    .stack {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

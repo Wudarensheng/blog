@@ -1,0 +1,127 @@
+---
+/**
+ * FacetView.astro · 分类 / 标签详情共用的列表页
+ */
+import type { Accent } from '@/config';
+import { accentByIndex } from '@/lib/accent';
+import { getAllPosts, type FacetItem, type Post } from '@/lib/posts';
+import MainLayout from '@/layouts/MainLayout.astro';
+import PageHeader from '@/components/common/PageHeader.astro';
+import PostList from '@/components/post/PostList.astro';
+import Icon from '@/components/common/Icon.astro';
+
+interface Props {
+  /** 当前条目（分类名或标签名） */
+  facet: FacetItem;
+  /** 同级全部条目 */
+  siblings: FacetItem[];
+  /** 同级条目的链接前缀，例如 /categories/ */
+  siblingBase: string;
+  /** 按哪个字段匹配文章 */
+  match: 'category' | 'tag';
+  /** 面包屑上一级 */
+  parent: { label: string; href: string };
+  accent: Accent;
+}
+
+const { facet, siblings, siblingBase, match, parent, accent } = Astro.props;
+
+const all = await getAllPosts();
+const items: Post[] =
+  match === 'category'
+    ? all.filter((post) => post.data.category === facet.name)
+    : all.filter((post) => post.data.tags.includes(facet.name));
+
+const others = siblings.filter((item) => item.slug !== facet.slug).slice(0, 12);
+const unit = match === 'category' ? '分类' : '标签';
+---
+
+<MainLayout
+  title={facet.name}
+  description={`${unit}「${facet.name}」下的全部文章，共 ${items.length} 篇。`}
+>
+  <PageHeader
+    title={facet.name}
+    description={`这是「${unit}」下的第 ${items.length} 组内容，按发布时间从新到旧排列。`}
+    crumbs={[{ label: '首页', href: '/' }, parent, { label: facet.name }]}
+    {accent}
+    count={items.length}
+  >
+    <p class="slug-line">
+      <Icon name="lucide:hash" size={12} />
+      {facet.slug}
+    </p>
+  </PageHeader>
+
+  <PostList posts={items} emptyText={`「${facet.name}」下暂时还没有文章。`} />
+
+  {
+    others.length > 0 && (
+      <section class="siblings card card-pad" aria-label={`其它${unit}`}>
+        <header>
+          <Icon name="lucide:list" size={13} />
+          <h2>换个{unit}看看</h2>
+        </header>
+
+        <ul>
+          {others.map((item, i) => (
+            <li data-accent={accentByIndex(i, 1)}>
+              <a class="pill pill-quiet pill-link" href={`${siblingBase}${item.slug}/`}>
+                {item.name}
+                <span class="n">{item.count}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</MainLayout>
+
+<style>
+  .slug-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  .siblings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .siblings header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-3);
+  }
+
+  .siblings h2 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .siblings ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .siblings .pill {
+    gap: 6px;
+  }
+
+  .siblings .n {
+    font-size: 0.9em;
+    color: var(--text-3);
+  }
+</style>

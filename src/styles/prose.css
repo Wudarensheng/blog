@@ -1,0 +1,621 @@
+/* ============================================================================
+   prose.css · 文章正文排版
+   ----------------------------------------------------------------------------
+   只作用于 .prose 容器（文章详情、关于页、友链页说明等）。
+   参考 DESIGN.md 第 3 节：正文行高 1.75~1.85，标题行高 1.35~1.5。
+   ========================================================================== */
+
+.prose {
+  color: var(--text-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  overflow-wrap: break-word;
+}
+
+.prose > * + * {
+  margin-top: var(--s-5);
+}
+
+/* ------------------------------------------------------------------ 标题 ---- */
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  position: relative;
+  margin-top: var(--s-12);
+  margin-bottom: var(--s-4);
+  color: var(--text-1);
+  line-height: var(--lh-heading);
+  scroll-margin-top: calc(var(--navbar-h) + var(--s-4));
+}
+
+.prose h2 {
+  padding-bottom: var(--s-3);
+  font-size: var(--fs-h2);
+  border-bottom: 1px solid var(--line);
+}
+
+/* 章节标记：三点装饰贴在 h2 左侧 */
+.prose h2::before {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 0 0 var(--amber), 0 0 0 0 var(--clay);
+}
+
+@media (max-width: 1024px) {
+  /* 先减装饰 */
+  .prose h2::before {
+    display: none;
+  }
+}
+
+.prose h3 {
+  font-size: var(--fs-h3);
+}
+
+.prose h4 {
+  font-size: var(--fs-h4);
+}
+
+.prose h5,
+.prose h6 {
+  font-size: var(--fs-body);
+  color: var(--text-2);
+}
+
+/* 标题锚点：悬停时从左侧 -6px 滑入并染色。
+   注意 <a> 是空元素，`#` 由 ::before 画出来——这样 Astro 收集标题文本做目录时
+   不会把 `#` 也算进去。 */
+.prose .heading-anchor {
+  position: absolute;
+  left: -1.05em;
+  top: 50%;
+  display: block;
+  width: 0.85em;
+  transform: translate(-6px, -50%);
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity var(--t-move), transform var(--t-move), color var(--t-color);
+}
+
+.prose .heading-anchor::before {
+  content: '#';
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  font-weight: 400;
+}
+
+.prose h2:hover .heading-anchor,
+.prose h3:hover .heading-anchor,
+.prose h4:hover .heading-anchor,
+.prose .heading-anchor:focus-visible {
+  opacity: 1;
+  transform: translate(0, -50%);
+  color: var(--a-d);
+}
+
+@media (max-width: 768px) {
+  .prose .heading-anchor {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ 正文 ---- */
+.prose p {
+  margin-top: var(--s-5);
+}
+
+.prose strong {
+  color: var(--text-1);
+  font-weight: 700;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+.prose del {
+  color: var(--text-3);
+}
+
+.prose mark {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--orange-l);
+  color: var(--orange-d);
+}
+
+html.dark .prose mark {
+  color: var(--orange);
+}
+
+/* ------------------------------------------------------------------ 链接 ---- */
+/* 下划线用 text-decoration 画，不用「把渐变压成一条线」的老办法 */
+.prose a:not(.heading-anchor) {
+  color: var(--text-1);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--a) 60%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition: color var(--t-color), text-decoration-color var(--t-color),
+    text-decoration-thickness var(--t-move);
+}
+
+.prose a:not(.heading-anchor):hover {
+  color: var(--a-d);
+  text-decoration-color: var(--a-d);
+  text-decoration-thickness: 2px;
+}
+
+/* ------------------------------------------------------------------ 列表 ---- */
+.prose ul,
+.prose ol {
+  padding-left: 1.4em;
+  margin-top: var(--s-4);
+}
+
+.prose ul {
+  list-style: none;
+}
+
+.prose ul > li {
+  position: relative;
+}
+
+.prose ul > li::before {
+  content: '';
+  position: absolute;
+  left: -1.1em;
+  top: 0.72em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--a);
+}
+
+/* 三站轮转：列表项之间颜色均衡分布 */
+.prose ul > li:nth-child(3n + 1)::before { background: var(--orange); }
+.prose ul > li:nth-child(3n + 2)::before { background: var(--amber); }
+.prose ul > li:nth-child(3n + 3)::before { background: var(--clay); }
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose ol > li::marker {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.prose li + li {
+  margin-top: var(--s-2);
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin-top: var(--s-2);
+}
+
+/* 任务列表（GFM） */
+.prose li.task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+}
+
+.prose li.task-list-item::before {
+  display: none;
+}
+
+.prose input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  margin-top: 0.42em;
+  accent-color: var(--amber-d);
+  flex: none;
+}
+
+/* ---------------------------------------------------------------- 引用块 ---- */
+.prose blockquote {
+  position: relative;
+  padding: var(--s-3) var(--s-5) var(--s-3) var(--s-6);
+  border-radius: var(--r-md);
+  background: var(--bg-soft);
+  color: var(--text-2);
+}
+
+/* 左侧一条平色暖色竖条，是页面上少见的彩色装饰之一 */
+.prose blockquote::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: var(--r-pill);
+  background: var(--orange);
+}
+
+.prose blockquote > * + * {
+  margin-top: var(--s-3);
+}
+
+.prose blockquote p:first-child {
+  margin-top: 0;
+}
+
+/* ------------------------------------------------------------------ 代码 ---- */
+.prose :not(pre) > code {
+  padding: 0.15em 0.42em;
+  border-radius: 6px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  color: var(--orange-d);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  letter-spacing: var(--ls-mono);
+  overflow-wrap: break-word;
+}
+
+html.dark .prose :not(pre) > code {
+  color: var(--orange);
+}
+
+/* 代码块外壳由 ProseEnhance.svelte 生成（.code-block > .code-head + pre） */
+.prose .code-block {
+  margin-top: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--code-bg);
+  overflow: hidden;
+}
+
+.prose .code-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 9px var(--s-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+
+.prose .code-head .lang {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.prose .code-head .spacer {
+  flex: 1;
+}
+
+.prose .code-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-mono);
+  transition: color var(--t-color), background-color var(--t-color),
+    border-color var(--t-color);
+}
+
+.prose .code-copy:hover {
+  color: var(--amber-d);
+  border-color: color-mix(in srgb, var(--amber-d) 30%, var(--line));
+  background: var(--amber-l);
+}
+
+.prose .code-copy[data-copied='true'] {
+  color: var(--amber-d);
+  border-color: color-mix(in srgb, var(--amber-d) 30%, var(--line));
+  background: var(--amber-l);
+}
+
+.prose pre {
+  margin: 0;
+  padding: var(--s-4) var(--s-5);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.83rem;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  tab-size: 2;
+}
+
+.prose pre code {
+  display: block;
+  min-width: max-content;
+  font-family: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+
+/* --- Shiki 双主题 --------------------------------------------------------- */
+/* 底色不用编辑器主题自带的，统一走本站的暖色令牌，
+   这样唯一一块「代码区」不会变成整页里的冷色孤岛。 */
+.prose .astro-code {
+  background-color: var(--code-bg) !important;
+}
+
+html.dark .prose .astro-code,
+html.dark .prose .astro-code span {
+  color: var(--shiki-dark) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+/* 未启用双主题时的兜底 */
+.prose .astro-code,
+.prose .astro-code span {
+  color: var(--shiki-light, inherit);
+}
+
+/* ------------------------------------------------------------------ 表格 ---- */
+.prose .table-wrap {
+  margin-top: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.prose thead {
+  background: var(--bg-soft);
+}
+
+.prose th {
+  padding: 10px var(--s-4);
+  color: var(--text-1);
+  font-weight: 700;
+  font-size: var(--fs-meta);
+  letter-spacing: 0.03em;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+
+.prose td {
+  padding: 10px var(--s-4);
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.prose tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.prose tbody tr {
+  transition: background-color var(--t-color);
+}
+
+.prose tbody tr:hover {
+  background: var(--bg-soft);
+}
+
+/* ------------------------------------------------------------------ 图片 ---- */
+.prose img {
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-rest);
+  margin-inline: auto;
+}
+
+.prose img[data-zoomable] {
+  cursor: zoom-in;
+  transition: transform var(--t-move), box-shadow var(--t-move);
+}
+
+.prose img[data-zoomable]:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* 图片说明：Markdown 里图片后紧跟 em 段落 */
+.prose p:has(> img) {
+  margin-top: var(--s-6);
+}
+
+.prose p:has(> img) + p > em:only-child {
+  display: block;
+  margin-top: var(--s-2);
+  text-align: center;
+  color: var(--text-3);
+  font-size: var(--fs-meta);
+  font-style: normal;
+  font-family: var(--font-mono);
+  letter-spacing: var(--ls-mono);
+}
+
+/* ------------------------------------------------------------------- 分隔 ---- */
+.prose hr {
+  height: 1px;
+  margin: var(--s-10) 0;
+  border: 0;
+  background: var(--line);
+}
+
+/* ------------------------------------------------------------------ 提示块 --- */
+/* 由 remark-callouts.mjs 从 :::note / :::tip / :::warning 语法生成，
+   落到 DOM 上是一个带 class 的 <blockquote>。 */
+.prose .callout {
+  margin-top: var(--s-5);
+  padding: var(--s-4) var(--s-5);
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--a) 45%, var(--line));
+  background: var(--a-l);
+}
+
+/* 提示块自带配色，覆盖通用引用块的灰底与左侧渐变竖条 */
+.prose blockquote.callout {
+  background: var(--a-l);
+  color: var(--text-2);
+}
+
+.prose blockquote.callout::before {
+  display: none;
+}
+
+.prose .callout > * + * {
+  margin-top: var(--s-3);
+}
+
+.prose .callout-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  color: var(--a-d);
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* 标题前的小圆点，代替图标 */
+.prose .callout-title::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--a-d);
+  flex: none;
+}
+
+.prose .callout p:not(.callout-title),
+.prose .callout li {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.8;
+}
+
+/* 三类提示块对应暖色三站，保证三个站点的使用频率均衡：
+   说明类最轻（琥珀）、建议类用主色（正橙）、警示类最重（陶土）。 */
+.prose .callout-note      { --a: var(--amber);  --a-d: var(--amber-d);  --a-l: var(--amber-l); }
+.prose .callout-tip       { --a: var(--orange); --a-d: var(--orange-d); --a-l: var(--orange-l); }
+.prose .callout-important { --a: var(--orange); --a-d: var(--orange-d); --a-l: var(--orange-l); }
+.prose .callout-warning   { --a: var(--clay);   --a-d: var(--clay-d);   --a-l: var(--clay-l); }
+.prose .callout-caution   { --a: var(--clay);   --a-d: var(--clay-d);   --a-l: var(--clay-l); }
+
+/* ------------------------------------------------------------------ 脚注 ---- */
+.prose .footnotes {
+  margin-top: var(--s-12);
+  padding-top: var(--s-6);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-meta);
+  color: var(--text-3);
+}
+
+.prose .footnotes h2 {
+  font-size: var(--fs-h4);
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.prose .footnotes h2::before {
+  display: none;
+}
+
+.prose [data-footnote-ref] {
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+}
+
+/* ------------------------------------------------------------------- kbd ---- */
+.prose kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  text-align: center;
+}
+
+/* ------------------------------------------------------ details / summary --- */
+.prose details {
+  margin-top: var(--s-5);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-soft);
+}
+
+.prose summary {
+  cursor: pointer;
+  color: var(--text-1);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  list-style: none;
+}
+
+.prose summary::-webkit-details-marker {
+  display: none;
+}
+
+.prose summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--clay-d);
+  transition: transform var(--t-move);
+}
+
+.prose details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.prose details[open] > * + * {
+  margin-top: var(--s-3);
+}
+
+/* ---------------------------------------------------- 移动端排版微调 ------- */
+@media (max-width: 768px) {
+  .prose {
+    font-size: 0.92rem;
+    line-height: 1.78;
+  }
+
+  .prose h2 {
+    margin-top: var(--s-10);
+    font-size: 1.2rem;
+  }
+
+  .prose pre {
+    padding: var(--s-3) var(--s-4);
+    font-size: 0.78rem;
+  }
+
+  .prose blockquote {
+    padding: var(--s-3) var(--s-4) var(--s-3) var(--s-5);
+  }
+}

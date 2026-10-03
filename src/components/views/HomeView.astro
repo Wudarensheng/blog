@@ -1,0 +1,81 @@
+---
+/**
+ * HomeView.astro · 首页主体（第 1 页与第 N 页共用）
+ * ----------------------------------------------------------------------------
+ * 首页直接进文章列表，不做开场问候卡片 —— 内容优先，留白交给 Banner 和卡片间距。
+ * 翻页后多一条窄标题条，说明当前是第几页。
+ */
+import { banner as bannerConf, posts as postsConf, site } from '@/config';
+import { getAllPosts } from '@/lib/posts';
+import MainLayout from '@/layouts/MainLayout.astro';
+import Banner from '@/components/layout/Banner.astro';
+import PostList from '@/components/post/PostList.astro';
+import Pagination from '@/components/post/Pagination.astro';
+import Dots from '@/components/common/Dots.astro';
+
+interface Props {
+  page: number;
+}
+
+const { page } = Astro.props;
+
+const all = await getAllPosts();
+const perPage = postsConf.perPage;
+const totalPages = Math.max(1, Math.ceil(all.length / perPage));
+const current = Math.min(Math.max(1, page), totalPages);
+
+const offset = (current - 1) * perPage;
+const items = all.slice(offset, offset + perPage);
+
+const isFirst = current === 1;
+---
+
+<MainLayout
+  title={isFirst ? undefined : `第 ${current} 页`}
+  description={site.description}
+  hasBanner={isFirst && bannerConf.enabled}
+  showFacets
+>
+  {isFirst && bannerConf.enabled && <Banner slot="banner" />}
+
+  {
+    !isFirst && (
+      <header class="page-mini card" data-accent="amber">
+        <Dots small />
+        <h1>第 {current} 页</h1>
+        <p>
+          共 {totalPages} 页 · {all.length} 篇文章
+        </p>
+      </header>
+    )
+  }
+
+  <section id="posts" aria-label="文章列表">
+    <PostList posts={items} offset={offset} featuredFirst={isFirst} />
+  </section>
+
+  <Pagination current={current} total={totalPages} base="/" pageBase="/page/" />
+</MainLayout>
+
+<style>
+  .page-mini {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-4) var(--gap-in-lg);
+  }
+
+  .page-mini h1 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .page-mini p {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+</style>

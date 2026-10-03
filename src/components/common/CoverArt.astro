@@ -1,0 +1,135 @@
+---
+/**
+ * CoverArt.astro · 自动生成的封面
+ * ----------------------------------------------------------------------------
+ * 文章没有提供封面图时，用纯平色的几何块拼一张「不重复但同源」的封面：
+ *   · 底色     = 该文章那一站的浅色版本
+ *   · 两个实心圆 = 另外两站的主色，靠透明度叠出层次（是纯色块，不是渐变）
+ *   · 一个描边圆环 = 该站深色，极淡
+ *   · 右下角一个半透明首字，左下角三点装饰
+ * 全部由 CSS 生成，零图片请求、零额外字节，也不含任何渐变。
+ */
+import type { Accent } from '@/config';
+import { accentByIndex } from '@/lib/accent';
+import Dots from './Dots.astro';
+
+interface Props {
+  accent: Accent;
+  /** 决定首字的文本，一般是文章标题 */
+  seed: string;
+  /** 宽高比，默认 16/9 */
+  ratio?: string;
+  class?: string;
+}
+
+const { accent, seed, ratio = '16 / 9', class: className = '' } = Astro.props;
+
+/** 取出「另外两站」，保证同屏三站均衡出现 */
+const others = [0, 1, 2]
+  .map((i) => accentByIndex(i))
+  .filter((a) => a !== accent);
+
+const glyph = [...seed.trim()][0] ?? '·';
+---
+
+<div
+  class:list={['cover-art', className]}
+  data-accent={accent}
+  style={`--ratio:${ratio};--b:var(--${others[0]});--c:var(--${others[1]})`}
+  aria-hidden="true"
+>
+  <span class="disc disc-b"></span>
+  <span class="disc disc-c"></span>
+  <span class="ring"></span>
+  <span class="glyph">{glyph}</span>
+  <span class="dots-slot"><Dots size={8} /></span>
+</div>
+
+<style>
+  .cover-art {
+    position: relative;
+    aspect-ratio: var(--ratio);
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--r-lg);
+    background-color: var(--a-l);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-d) 6%, transparent);
+    isolation: isolate;
+  }
+
+  /* 两块实心圆，靠 opacity 叠层次——纯色块，不是径向渐变 */
+  .disc {
+    position: absolute;
+    aspect-ratio: 1;
+    border-radius: 50%;
+  }
+
+  .disc-b {
+    top: -26%;
+    right: -12%;
+    width: 82%;
+    background: var(--b);
+    opacity: 0.4;
+  }
+
+  .disc-c {
+    bottom: -24%;
+    left: -8%;
+    width: 58%;
+    background: var(--c);
+    opacity: 0.34;
+  }
+
+  /* 细描边圆环（6.1 彩色圆环的克制版）——用 border，不用 mask */
+  .ring {
+    position: absolute;
+    top: 16%;
+    right: 13%;
+    width: 26%;
+    aspect-ratio: 1;
+    border: 3px solid var(--a-d);
+    border-radius: 50%;
+    opacity: 0.22;
+  }
+
+  .glyph {
+    position: absolute;
+    right: 5%;
+    bottom: -4%;
+    font-family: var(--font-mono);
+    font-size: clamp(3.4rem, 11vw, 6.5rem);
+    font-weight: 700;
+    line-height: 0.86;
+    letter-spacing: -0.04em;
+    color: var(--a-d);
+    opacity: 0.16;
+    user-select: none;
+  }
+
+  .dots-slot {
+    position: absolute;
+    left: 18px;
+    bottom: 18px;
+  }
+
+  .dots-slot :global(i) {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--a-l) 70%, transparent);
+  }
+
+  /* 暗色主题：彩色要一样稀有 */
+  :global(html.dark) .ring {
+    opacity: 0.3;
+  }
+
+  :global(html.dark) .glyph {
+    opacity: 0.22;
+  }
+
+  /* 先减装饰：小屏收起圆环与首字 */
+  @media (max-width: 768px) {
+    .ring,
+    .glyph {
+      display: none;
+    }
+  }
+</style>

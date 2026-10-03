@@ -1,0 +1,69 @@
+---
+/**
+ * RelatedPosts.astro · 相关文章
+ * 推荐依据：同分类 +1 分，每个共同标签 +2 分（见 lib/posts.ts 的 getRelated）。
+ */
+import { accentByIndex } from '@/lib/accent';
+import type { Post } from '@/lib/posts';
+import PostCard from '@/components/post/PostCard.astro';
+import Icon from '@/components/common/Icon.astro';
+
+interface Props {
+  posts: Post[];
+}
+
+const { posts } = Astro.props;
+---
+
+{
+  posts.length > 0 && (
+    <section class="related" aria-label="相关文章">
+      <header class="head">
+        <Icon name="lucide:sparkles" size={14} />
+        <h2>相关文章</h2>
+        <span class="line" />
+      </header>
+
+      <div class="list">
+        {posts.map((post, i) => (
+          <PostCard post={post} accent={accentByIndex(i, 1)} variant="compact" showCover={false} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .related {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-3);
+  }
+
+  .head h2 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .head .line {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+</style>

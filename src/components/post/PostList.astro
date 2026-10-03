@@ -1,0 +1,67 @@
+---
+/**
+ * PostList.astro · 文章卡片列表
+ * 颜色按序号严格轮转，保证琥珀 / 正橙 / 陶土出现频率一致。
+ */
+import { accentByIndex } from '@/lib/accent';
+import type { Post } from '@/lib/posts';
+import PostCard from '@/components/post/PostCard.astro';
+import Icon from '@/components/common/Icon.astro';
+
+interface Props {
+  posts: Post[];
+  /** 全局序号偏移，跨页时颜色依然连续 */
+  offset?: number;
+  /** 第一条用宽封面 */
+  featuredFirst?: boolean;
+  emptyText?: string;
+}
+
+const {
+  posts,
+  offset = 0,
+  featuredFirst = false,
+  emptyText = '这里还没有文章。',
+} = Astro.props;
+---
+
+{
+  posts.length === 0 ? (
+    <div class="empty card">
+      <Icon name="lucide:file-text" size={26} />
+      <p>{emptyText}</p>
+    </div>
+  ) : (
+    <div class="post-list">
+      {posts.map((post, i) => (
+        <PostCard
+          post={post}
+          accent={accentByIndex(i + offset)}
+          variant={featuredFirst && i === 0 ? 'featured' : 'default'}
+        />
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-card);
+  }
+
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-16) var(--s-4);
+    color: var(--text-3);
+    text-align: center;
+  }
+
+  .empty p {
+    font-size: 0.86rem;
+  }
+</style>

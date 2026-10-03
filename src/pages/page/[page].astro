@@ -1,0 +1,20 @@
+---
+import { posts as postsConf } from '@/config';
+import { getAllPosts } from '@/lib/posts';
+import HomeView from '@/components/views/HomeView.astro';
+
+export async function getStaticPaths() {
+  const all = await getAllPosts();
+  const totalPages = Math.ceil(all.length / postsConf.perPage);
+
+  // 第 1 页由 src/pages/index.astro 负责，这里只生成 2..n
+  return Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => ({
+    params: { page: String(i + 2) },
+    props: { page: i + 2 },
+  }));
+}
+
+const { page } = Astro.props;
+---
+
+<HomeView page={page} />

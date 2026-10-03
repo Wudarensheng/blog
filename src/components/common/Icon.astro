@@ -1,0 +1,69 @@
+---
+/**
+ * Icon.astro · 统一的图标出口
+ * ----------------------------------------------------------------------------
+ * 图标数据直接来自 `@iconify-json/*`，在构建期解析成内联 SVG。
+ * 因此：没有外部图标字体、没有运行时请求、没有额外集成，离线可用。
+ *
+ * 用法：<Icon name="lucide:rss" /> / <Icon name="simple-icons:github" />
+ */
+import lucide from '@iconify-json/lucide/icons.json';
+import simpleIcons from '@iconify-json/simple-icons/icons.json';
+
+interface IconSet {
+  width?: number;
+  height?: number;
+  icons: Record<string, { body: string } | undefined>;
+}
+
+interface Props {
+  /** `图标集:图标名`，省略图标集时默认 lucide */
+  name: string;
+  /** 像素尺寸，宽高一致 */
+  size?: number | string;
+  /** 额外 class */
+  class?: string;
+  /** 线条图标的描边粗细；默认 1.75（比 Lucide 原生的 2 更轻盈） */
+  stroke?: number;
+}
+
+const { name, size = 18, class: className = '', stroke = 1.75 } = Astro.props;
+
+const SETS: Record<string, IconSet> = {
+  lucide: lucide as IconSet,
+  'simple-icons': simpleIcons as IconSet,
+};
+
+const [prefix, iconName] = name.includes(':')
+  ? (name.split(':') as [string, string])
+  : (['lucide', name] as [string, string]);
+
+const set = SETS[prefix];
+if (!set) {
+  throw new Error(`[Icon] 未知图标集 "${prefix}"（来自 "${name}"）。已支持：${Object.keys(SETS).join(', ')}`);
+}
+
+const icon = set.icons[iconName];
+if (!icon) {
+  throw new Error(`[Icon] 在 "${prefix}" 中找不到图标 "${iconName}"`);
+}
+
+const body =
+  prefix === 'lucide' && stroke !== 2
+    ? icon.body.replace(/stroke-width="[\d.]+"/g, `stroke-width="${stroke}"`)
+    : icon.body;
+
+const width = set.width ?? 24;
+const height = set.height ?? 24;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width={size}
+  height={size}
+  viewBox={`0 0 ${width} ${height}`}
+  class:list={['icon', className]}
+  aria-hidden="true"
+  focusable="false"
+  set:html={body}
+/>

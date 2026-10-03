@@ -1,0 +1,159 @@
+---
+/**
+ * Pagination.astro · 分页
+ * 页码用等宽字体（DESIGN.md 3.3：编号属于「数据」类信息）。
+ */
+import Icon from '@/components/common/Icon.astro';
+
+interface Props {
+  current: number;
+  total: number;
+  /** 第 1 页的地址，例如 '/' 或 '/tags/前端/' */
+  base: string;
+  /** 第 2 页起的地址前缀，例如 '/page/' 或 '/tags/前端/page/' */
+  pageBase: string;
+}
+
+const { current, total, base, pageBase } = Astro.props;
+
+const href = (page: number) => (page === 1 ? base : `${pageBase}${page}/`);
+
+/** 首页 + 尾页 + 当前页附近，其余折叠成省略号 */
+const windowed = (() => {
+  const pages: (number | '…')[] = [];
+  for (let i = 1; i <= total; i += 1) {
+    if (i === 1 || i === total || Math.abs(i - current) <= 1) pages.push(i);
+    else if (pages[pages.length - 1] !== '…') pages.push('…');
+  }
+  return pages;
+})();
+---
+
+{
+  total > 1 && (
+    <nav class="pagination" aria-label="分页">
+      <a
+        class="step"
+        href={href(Math.max(1, current - 1))}
+        aria-disabled={current === 1}
+        tabindex={current === 1 ? -1 : 0}
+        data-disabled={current === 1 ? 'true' : 'false'}
+      >
+        <Icon name="lucide:arrow-left" size={14} />
+        上一页
+      </a>
+
+      <ol class="pages">
+        {windowed.map((page) =>
+          page === '…' ? (
+            <li class="gap">…</li>
+          ) : (
+            <li>
+              <a
+                href={href(page)}
+                class:list={['page-link', { active: page === current }]}
+                aria-current={page === current ? 'page' : undefined}
+              >
+                {page}
+              </a>
+            </li>
+          ),
+        )}
+      </ol>
+
+      <a
+        class="step"
+        href={href(Math.min(total, current + 1))}
+        aria-disabled={current === total}
+        tabindex={current === total ? -1 : 0}
+        data-disabled={current === total ? 'true' : 'false'}
+      >
+        下一页
+        <Icon name="lucide:arrow-right" size={14} />
+      </a>
+    </nav>
+  )
+}
+
+<style>
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-3);
+    padding-top: var(--s-4);
+    flex-wrap: wrap;
+  }
+
+  .step {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    background: var(--card);
+    color: var(--text-2);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    transition: color var(--t-color), border-color var(--t-color),
+      background-color var(--t-color), transform var(--t-move);
+  }
+
+  .step:hover {
+    color: var(--clay-d);
+    border-color: color-mix(in srgb, var(--clay-d) 28%, var(--line));
+    background: var(--clay-l);
+    transform: translateY(-2px);
+  }
+
+  .step[data-disabled='true'] {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pages a {
+    display: grid;
+    place-items: center;
+    min-width: 32px;
+    height: 32px;
+    padding-inline: 6px;
+    border-radius: var(--r-sm);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-2);
+    transition: color var(--t-color), background-color var(--t-color);
+  }
+
+  .pages a:hover {
+    background: var(--bg-soft);
+    color: var(--text-1);
+  }
+
+  .pages a.active {
+    background: var(--clay-l);
+    color: var(--clay-d);
+    font-weight: 700;
+  }
+
+  .gap {
+    padding-inline: 2px;
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: var(--fs-meta);
+  }
+
+  @media (max-width: 480px) {
+    .step span,
+    .step {
+      font-size: 0.66rem;
+    }
+  }
+</style>

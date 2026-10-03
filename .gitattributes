@@ -1,0 +1,24 @@
+# 仓库内统一用 LF。
+#
+# Windows 上 git 默认会把检出后的文本文件转成 CRLF，这会在两个地方咬人：
+#   · remark 插件里的正则 —— `.` 不匹配 \r、`$` 只匹配字符串末尾，
+#     ":::warning\r" 这种标记行会静默失效（本项目踩过这个坑）
+#   · 任何人提交后 diff 全红，review 变成噪音
+#
+# 所以这里显式钉死 LF，不管 clone 的人用什么系统。
+* text=auto eol=lf
+
+# 图片与字体是真二进制，别让 git 去猜
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.avif binary
+*.ico  binary
+*.woff  binary
+*.woff2 binary
+
+# lock 文件按文本处理，但不要参与 diff 统计
+pnpm-lock.yaml  text eol=lf -diff
+package-lock.json text eol=lf -diff

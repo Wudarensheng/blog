@@ -1,0 +1,121 @@
+---
+/**
+ * PostNav.astro · 上一篇 / 下一篇
+ * 「上一篇」= 时间上更早，「下一篇」= 时间上更晚，两侧都带上日期避免歧义。
+ */
+import type { Adjacent } from '@/lib/posts';
+import { ymd } from '@/lib/format';
+import Icon from '@/components/common/Icon.astro';
+
+interface Props {
+  adjacent: Adjacent;
+}
+
+const { adjacent } = Astro.props;
+const { older, newer } = adjacent;
+---
+
+{
+  (older || newer) && (
+    <nav class="post-nav" aria-label="上下篇">
+      {older ? (
+        <a class="cell card card-hover" data-accent="orange" href={`/posts/${older.id}/`}>
+          <span class="dir">
+            <Icon name="lucide:arrow-left" size={13} />
+            上一篇 · 更早
+          </span>
+          <span class="title">{older.data.title}</span>
+          <span class="date">{ymd(older.data.published)}</span>
+        </a>
+      ) : (
+        <span class="cell is-empty" aria-hidden="true" />
+      )}
+
+      {newer ? (
+        <a class="cell card card-hover is-next" data-accent="clay" href={`/posts/${newer.id}/`}>
+          <span class="dir">
+            下一篇 · 更晚
+            <Icon name="lucide:arrow-right" size={13} />
+          </span>
+          <span class="title">{newer.data.title}</span>
+          <span class="date">{ymd(newer.data.published)}</span>
+        </a>
+      ) : (
+        <span class="cell is-empty" aria-hidden="true" />
+      )}
+    </nav>
+  )
+}
+
+<style>
+  .post-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-card);
+  }
+
+  .cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--s-4) var(--s-5);
+    min-width: 0;
+  }
+
+  .cell.is-empty {
+    border: 1px dashed var(--line);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .is-next {
+    text-align: right;
+    align-items: flex-end;
+  }
+
+  .dir {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--a-d);
+  }
+
+  .title {
+    color: var(--text-1);
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .date {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-mono);
+    color: var(--text-3);
+  }
+
+  @media (max-width: 768px) {
+    .post-nav {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cell.is-empty {
+      display: none;
+    }
+
+    .is-next {
+      text-align: left;
+      align-items: flex-start;
+    }
+  }
+</style>
