@@ -109,7 +109,14 @@ const isActive = (href: string) =>
     height: var(--navbar-h);
     border-bottom: 1px solid transparent;
     transition: background-color var(--t-move), border-color var(--t-move),
-      box-shadow var(--t-move), backdrop-filter var(--t-move);
+      box-shadow var(--t-move), backdrop-filter var(--t-move),
+      transform var(--t-move);
+  }
+
+  /* 向下滚：整条滑出视口，把空间让给正文。向上滚由 JS 立刻撤回。
+     抽屉打开或焦点落在导航栏里时不会隐藏 —— 见 HeaderBehavior.svelte。 */
+  .navbar[data-hidden='true'] {
+    transform: translateY(-100%);
   }
 
   /* 毛玻璃：滚动之后或页面本身没有 Banner 时 */

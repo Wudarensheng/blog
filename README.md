@@ -295,7 +295,11 @@ pnpm check        # astro check：Astro / Svelte / TS 类型与无障碍提示
 pnpm icons        # 校验所有图标引用真实存在
 pnpm test         # remark-callouts 插件的单元测试（含 CRLF 用例）
 pnpm build && pnpm verify   # 产物自检：迁移完整性、动效接入、配色、渐变、RSS、断链……
-pnpm shots        # 生成交互态调试页（真实移动端视口 / 搜索 / 抽屉 / 导航）便于肉眼检查
+pnpm shots        # 生成交互态调试页（真实移动端视口 / 搜索 / 抽屉 / 跳转 / 滚动行为）
+
+# 滚动行为那个调试页会自己跑 9 步断言并把结果画在页面上，截图即可读：
+#   node scripts/make-debug-pages.mjs && pnpm preview
+#   → http://localhost:4321/_scroll-probe.html
 ```
 
 `pnpm verify` 检查 50 多项，其中几组值得单独说：

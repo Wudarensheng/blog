@@ -240,6 +240,17 @@ check(
   (homeForMotion.match(/data-astro-transition-persist/g) ?? []).length >= 6,
   `${(homeForMotion.match(/data-astro-transition-persist/g) ?? []).length} 处`,
 );
+check(
+  '导航栏有向下滚隐藏的样式',
+  // bundleCss 已统一转小写；CSS 压缩后 [data-hidden='true'] 也会变成 [data-hidden=true]
+  /\[data-hidden[^\]]*\]/.test(bundleCss) && bundleCss.includes('translatey(-100%)'),
+);
+// 服务端渲染时导航栏必须是可见的：不能把隐藏状态写死在标记里，
+// 否则关掉 JS 的读者一进页面就没有导航栏。
+check(
+  '导航栏初始不隐藏（SSR 标记里没有 data-hidden）',
+  !/data-navbar[^>]*data-hidden/.test(homeForMotion),
+);
 
 // 服务端渲染的 HTML 里不应该出现 data-reveal —— 那是 JS 在运行时加的。
 // 如果出现了，说明初始隐藏被写死在标记里，关掉 JS 的读者会看到一片空白。
