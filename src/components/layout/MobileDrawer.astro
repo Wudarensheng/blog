@@ -27,7 +27,6 @@ const isActive = (href: string) =>
     aria-label="移动端导航"
   >
   <header class="top">
-    <span class="logo">{site.logoText}</span>
     <div class="names">
       <strong>{site.title}</strong>
       <small>{site.subtitle}</small>
@@ -183,19 +182,6 @@ const isActive = (href: string) =>
     height: var(--navbar-h);
     flex: none;
     border-bottom: 1px solid var(--line);
-  }
-
-  .logo {
-    display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    border-radius: var(--r-xs);
-    background: var(--brand);
-    color: #fff;
-    font-size: 0.85rem;
-    font-weight: 700;
-    flex: none;
   }
 
   .names {

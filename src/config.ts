@@ -48,8 +48,6 @@ export const site = {
   subtitle: '分享科技与技术与实践',
   description:
     '分享科技与技术与实践。记录白嫖过的免费服务、折腾过的云函数，以及踩过的坑。',
-  /** 导航栏左上角的方块文字，1~2 个字符最佳 */
-  logoText: '无',
   /** 站点语言 */
   lang: 'zh-CN',
 } as const;

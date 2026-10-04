@@ -62,16 +62,6 @@ html.js .site-main {
 }
 
 /* ------------------------------------------------------------ 微交互 --- */
-/* logo 方块：悬停时轻轻歪一下 */
-.brand:hover .logo,
-.drawer .top .logo {
-  transition: transform var(--t-ring);
-}
-
-.brand:hover .logo {
-  transform: rotate(-8deg);
-}
-
 /* 三点装饰：父级悬停时依次轻微放大，像被按了一下 */
 .dots i {
   transition: transform var(--t-move);
@@ -122,10 +112,6 @@ html.js .site-main {
 
   html.js .site-main {
     animation: none;
-  }
-
-  .brand:hover .logo {
-    transform: none;
   }
 
   .card:hover .dots i,

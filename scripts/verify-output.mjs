@@ -53,6 +53,7 @@ check('正文插图渲染为 img', /<img[^>]+src="\/_astro\//.test(dockerPost));
 const homeHtml = read('index.html');
 check('导航不再含「工具」', !homeHtml.includes('/tools/'));
 check('也没有生成 tools 目录', !fs.existsSync(path.join(DIST, 'tools')));
+check('导航栏没有 logo 方块', !homeHtml.includes('class="logo"'));
 check('导航含「监测」下拉', homeHtml.includes('nav-drop-panel'));
 const dropPanel = homeHtml.match(/nav-drop-panel[^>]*>([\s\S]*?)<\/div>\s*<\/div>/)?.[1] ?? '';
 check(

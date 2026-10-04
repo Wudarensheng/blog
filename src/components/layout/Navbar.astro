@@ -33,7 +33,6 @@ const isActive = (href: string) =>
 >
   <div class="container inner">
     <a class="brand" href="/" aria-label={`${site.title} 首页`}>
-      <span class="logo">{site.logoText}</span>
       <span class="names">
         <strong>{site.title}</strong>
         <small>{site.subtitle}</small>
@@ -133,24 +132,8 @@ const isActive = (href: string) =>
   .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
     flex: none;
     min-width: 0;
-  }
-
-  .logo {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--r-xs);
-    background: var(--brand);
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0;
-    flex: none;
-    box-shadow: var(--shadow-rest);
   }
 
   .names {

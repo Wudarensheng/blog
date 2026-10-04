@@ -181,7 +181,7 @@ export const sidebar = { … };    // 侧栏开关与上限
 export const comments = { … };   // 评论挂载点
 ```
 
-`logoText`、`profile.avatar`、`friends`、`footer` 也都在同一个文件里。
+`profile.avatar`、`friends`、`footer` 也都在同一个文件里。
 
 ### 2. 配色
 
