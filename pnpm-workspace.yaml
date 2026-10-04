@@ -1,5 +1,6 @@
 # pnpm 11 起，依赖的构建脚本白名单写在这里
-# esbuild / sharp 需要运行安装脚本来落地平台二进制文件
+# esbuild / sharp / workerd 需要运行安装脚本来落地平台二进制文件
 allowBuilds:
   esbuild: true
   sharp: true
+  workerd: true

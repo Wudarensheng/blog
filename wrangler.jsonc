@@ -1,0 +1,31 @@
+{
+  // Cloudflare Workers 静态资源部署配置。
+  //
+  // 这是一个「纯静态」Worker：没有 main 入口、不跑任何服务端代码，
+  // 整个 dist/ 直接作为静态资源发布。Astro 的产物本来就是纯静态的，
+  // 不需要 @astrojs/cloudflare 适配器。
+  //
+  //   pnpm build && pnpm deploy
+  //
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // ⚠️ Worker 名字决定 workers.dev 子域，也决定「部署会覆盖谁」。
+  //    这里沿用旧站点的名字，这样 blog.wudarensheng.top 这个自定义域
+  //    不用重新绑定，deploy 之后域名直接指向新主题。
+  //    想并行部署一份新的，把它改成别的名字即可。
+  "name": "blog-wudarensheng-top",
+  "compatibility_date": "2026-10-04",
+
+  "assets": {
+    "directory": "./dist",
+
+    // 未匹配到资源时返回 dist/404.html。
+    // 本主题有自定义 404 页，不用它的话 Cloudflare 会返回一个白板。
+    "not_found_handling": "404-page",
+
+    // Astro 默认输出 build.format: 'directory'，即 /archive/index.html。
+    // auto-trailing-slash 会同时接受 /archive 和 /archive/，并做 301 归一，
+    // 正是这种产物需要的处理方式。
+    "html_handling": "auto-trailing-slash"
+  }
+}

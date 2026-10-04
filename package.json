@@ -34,6 +34,9 @@
     "shots": "node scripts/make-debug-pages.mjs",
     "migrate": "node scripts/migrate-fuwari.mjs",
     "brand": "python scripts/make-brand.py",
+    "deploy": "pnpm build && wrangler deploy",
+    "cf:dev": "wrangler dev",
+    "cf:dry": "wrangler deploy --dry-run",
     "astro": "astro"
   },
   "dependencies": {
@@ -51,6 +54,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.5",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.147.0"
   }
 }

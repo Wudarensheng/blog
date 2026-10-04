@@ -331,6 +331,31 @@ pnpm build
 1. `astro.config.mjs` 的 `SITE`
 2. `src/config.ts` 的 `site.url`
 
+### Cloudflare Workers（静态资源）
+
+仓库里带了 `wrangler.jsonc`，是把 `dist/` 当作**纯静态 Worker** 发布的最小配置 ——
+没有 `main` 入口、不跑任何服务端代码，所以不需要 `@astrojs/cloudflare` 适配器。
+
+```bash
+pnpm deploy      # astro build + wrangler deploy
+pnpm cf:dev      # 本地起一个真实的 Workers 运行时（默认 :8787）
+pnpm cf:dry      # 只校验配置与资源清单，不真的部署
+```
+
+配置里有两处需要你确认：
+
+| 字段 | 说明 |
+|------|------|
+| `name` | Worker 名字决定 `*.workers.dev` 子域，也决定**部署会覆盖谁**。仓库里填的是 `blog-wudarensheng-top`，沿用旧站点，这样自定义域不用重新绑定。想并行部署一份新的就改掉它。 |
+| `assets.not_found_handling` | 设为 `404-page`，未匹配的路径返回 `dist/404.html`。本主题有自定义 404 页，用默认值的话访客会看到 Cloudflare 的白板页。 |
+
+`html_handling` 用 `auto-trailing-slash`：Astro 默认输出 `build.format: 'directory'`（`/archive/index.html`），
+这个模式会同时接受 `/archive` 与 `/archive/` 并做 307 归一，正是这种产物需要的处理方式。
+
+> `wrangler` 是 `devDependencies` 里的依赖，`pnpm install` 时会一并装上。
+> 它带的 `workerd` 需要在 `pnpm-workspace.yaml` 的 `allowBuilds` 里放行 ——
+> pnpm 11 默认不跑依赖的安装脚本，不放行的话本地 `wrangler dev` 起不来。
+
 ---
 
 ## 实现说明
