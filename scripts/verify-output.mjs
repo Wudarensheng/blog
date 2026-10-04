@@ -8,6 +8,16 @@ import path from 'node:path';
 const DIST = 'dist';
 let failed = 0;
 
+/**
+ * 站点地址有两个来源，且必须一致（sitemap / RSS 要绝对地址）。
+ * 这里从 astro.config.mjs 取，再跟 src/config.ts 对一次 ——
+ * 改了一处忘了另一处是个很容易犯、又很难发现的错。
+ */
+const SITE_URL =
+  fs.readFileSync('astro.config.mjs', 'utf8').match(/const SITE = '([^']+)'/)?.[1] ?? '';
+const CONFIG_URL =
+  fs.readFileSync('src/config.ts', 'utf8').match(/url:\s*'([^']+)'/)?.[1] ?? '';
+
 function check(label, ok, detail = '') {
   console.log(`${ok ? '  ✓' : '  ✗'} ${label}${detail ? ` — ${detail}` : ''}`);
   if (!ok) failed += 1;
@@ -140,6 +150,72 @@ check('条目数正确', (rss.match(/<item>/g) ?? []).length === search.length);
 
 console.log('\n[robots] dist/robots.txt');
 check('含 sitemap', read('robots.txt').includes('Sitemap:'));
+
+console.log('\n[站点地址] astro.config.mjs 与 src/config.ts 必须一致');
+check(
+  '两处地址相同',
+  SITE_URL === CONFIG_URL && SITE_URL !== '',
+  `astro=${SITE_URL || '(空)'}  config=${CONFIG_URL || '(空)'}`,
+);
+check('是 https 绝对地址', /^https:\/\/[^/]+$/.test(SITE_URL), SITE_URL);
+
+console.log('\n[sitemap] 与实际产出的页面对齐');
+const sitemapXml = read('sitemap-0.xml');
+const sitemapUrls = [...sitemapXml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
+check('生成了 sitemap-index', /<sitemapindex/.test(read('sitemap-index.xml')));
+
+/*
+ * 这一条来自一次真实排查：sitemap 看着「怪怪的」，但把 URL 和 dist 里
+ * 实际生成的页面对一遍才发现是 1:1 的 —— 真正缺的是 lastmod。
+ * 所以两头都要盯：不能有指向不存在页面的条目，也不能漏掉已生成的页面。
+ */
+const builtPages = [];
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      if (e.name !== '_astro') walk(p);
+    } else if (e.name === 'index.html') {
+      const rel = path.relative(DIST, path.dirname(p)).split(path.sep).join('/');
+      builtPages.push(rel === '' ? '/' : `/${rel}/`);
+    }
+  }
+})(DIST);
+
+const toPath = (u) => decodeURIComponent(u.replace(SITE_URL, '')) || '/';
+const sitemapPaths = new Set(sitemapUrls.map(toPath));
+const builtSet = new Set(builtPages);
+
+const ghost = [...sitemapPaths].filter((u) => !builtSet.has(u));
+const missing = [...builtSet].filter((u) => !sitemapPaths.has(u));
+check('没有指向不存在页面的条目', ghost.length === 0, ghost.join(', '));
+check('没有漏掉已生成的页面', missing.length === 0, missing.join(', '));
+check('条目数与页面数一致', sitemapUrls.length === builtPages.length, `${sitemapUrls.length} vs ${builtPages.length}`);
+
+const lastmods = (sitemapXml.match(/<lastmod>/g) ?? []).length;
+check(
+  '文章与聚合页都带 lastmod',
+  lastmods >= sitemapUrls.length - 4,
+  `${lastmods} / ${sitemapUrls.length} 条（about、friends 无日期，留空是对的）`,
+);
+/*
+ * lastmod 的关键不变式不是「各不相同」—— 两篇文章同一天发布完全正常
+ * （这里就有两篇是 2026-02-11）。真正要防的是「所有条目都被写成构建时间」，
+ * 那会让搜索引擎认定这个字段不可信，进而整个忽略它。
+ */
+const postLastmods = [...sitemapXml.matchAll(/\/posts\/[^<]*<\/loc><lastmod>([^<]+)</g)].map(
+  (m) => m[1],
+);
+check('每篇文章都带 lastmod', postLastmods.length === 12, `${postLastmods.length} 篇`);
+check(
+  'lastmod 是合法 ISO 日期',
+  postLastmods.every((d) => !Number.isNaN(new Date(d).getTime())),
+);
+check(
+  'lastmod 不是清一色的构建时间',
+  new Set(postLastmods).size > 1,
+  `${new Set(postLastmods).size} 个不同日期`,
+);
 
 console.log('\n[链接一致性] 检查所有内部链接是否有对应产物');
 const pages = [];

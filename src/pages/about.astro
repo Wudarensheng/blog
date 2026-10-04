@@ -112,15 +112,15 @@ const repos = [
       </div>
 
       <h2>技术栈</h2>
-      <div class="stack">
+      <div class="tech-grid">
         {
           stack.map((item, i) => (
-            <div class="stack-item" data-accent={accentByIndex(i)}>
-              <div class="stack-head">
-                <span class="stack-icon">
+            <div class="tech-item" data-accent={accentByIndex(i)}>
+              <div class="tech-head">
+                <span class="tech-icon">
                   <Icon name={item.icon} size={20} />
                 </span>
-                <span class="stack-name">
+                <span class="tech-name">
                   <strong>{item.name}</strong>
                   <small>{item.role}</small>
                 </span>
@@ -281,14 +281,22 @@ const repos = [
   }
 
   /* ------------------------------------------------------------ 技术栈 --- */
-  .stack {
+  /*
+   * 类名刻意避开 .stack：base.css 里曾经有个全局的 `.stack > * + *` 工具类，
+   * 撞上之后每张卡片（除第一张外）都被加上 margin-top —— grid 的 stretch
+   * 拉伸的是 margin box，于是卡片被顶下去一截、高度也短了 16px。
+   * 那种错位很难从视觉上看出原因，所以这里连名字都换掉。
+   */
+  .tech-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    /* 三张卡片必须等高，写出来是为了表明这是要求而不是巧合 */
+    align-items: stretch;
     gap: var(--s-3);
     margin-top: var(--s-4);
   }
 
-  .stack-item {
+  .tech-item {
     display: flex;
     flex-direction: column;
     gap: var(--s-3);
@@ -300,18 +308,18 @@ const repos = [
     transition: transform var(--t-move), box-shadow var(--t-move);
   }
 
-  .stack-item:hover {
+  .tech-item:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-hover);
   }
 
-  .stack-head {
+  .tech-head {
     display: flex;
     align-items: center;
     gap: var(--s-3);
   }
 
-  .stack-icon {
+  .tech-icon {
     display: grid;
     place-items: center;
     width: 42px;
@@ -322,25 +330,25 @@ const repos = [
     color: var(--a-d);
   }
 
-  .stack-name {
+  .tech-name {
     display: flex;
     flex-direction: column;
     line-height: 1.25;
   }
 
-  .stack-name strong {
+  .tech-name strong {
     color: var(--text-1);
     font-size: 1rem;
     font-weight: 700;
     letter-spacing: -0.02em;
   }
 
-  .stack-name small {
+  .tech-name small {
     color: var(--text-3);
     font-size: var(--fs-meta);
   }
 
-  .stack-item p {
+  .tech-item p {
     margin: 0;
     color: var(--text-2);
     font-size: 0.82rem;
@@ -376,7 +384,7 @@ const repos = [
 
   @media (max-width: 480px) {
     .repos,
-    .stack {
+    .tech-grid {
       grid-template-columns: minmax(0, 1fr);
     }
   }

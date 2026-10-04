@@ -103,24 +103,68 @@ const bannerOn = hasBanner && bannerConf.enabled;
       三态约定：localStorage 无值 = 跟随系统。
       顺便挂上 html.js —— 动效层只在 JS 可用时才把元素设为初始隐藏，
       这样关掉 JavaScript 的读者看到的仍是完整页面。
+
+      为什么要把 applyTheme 挂到 window 上：View Transitions 换页时
+      Astro 会把 <html> 的属性全部删光再套用新文档的（见 swapRootAttributes），
+      而 SSR 输出的 <html> 里没有 dark / js —— 不补的话每次换页都会掉回亮色。
+      ThemeToggle 复用同一个函数，保证「页头脚本」和「切换按钮」永远一致。
     -->
     <script is:inline>
       (function () {
-        document.documentElement.classList.add('js');
-        try {
-          var stored = localStorage.getItem('theme');
-          var mode =
-            stored === 'light' || stored === 'dark'
-              ? stored
-              : window.matchMedia('(prefers-color-scheme: dark)').matches
-                ? 'dark'
-                : 'light';
-          if (mode === 'dark') document.documentElement.classList.add('dark');
-          document.documentElement.dataset.themeMode = stored || 'auto';
+        var root = document.documentElement;
+        root.classList.add('js');
+
+        /** 读用户的手动选择；没选过返回 null（= 跟随系统） */
+        function storedMode() {
+          try {
+            var v = localStorage.getItem('theme');
+            return v === 'light' || v === 'dark' ? v : null;
+          } catch (e) {
+            return null; // localStorage 被禁用时按「跟随系统」处理
+          }
+        }
+
+        /** 把模式渲染到 <html> 上。mode: 'light' | 'dark' | 'auto' */
+        function applyTheme(mode) {
+          var dark =
+            mode === 'dark' ||
+            (mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+          root.classList.toggle('dark', dark);
+          root.dataset.themeMode = mode;
+
           var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', mode === 'dark' ? '#141110' : '#ffffff');
-        } catch (e) {
-          /* localStorage 被禁用时静默降级为亮色 */
+          if (meta) meta.setAttribute('content', dark ? '#141110' : '#ffffff');
+        }
+
+        window.__theme = {
+          mode: function () {
+            return storedMode() || 'auto';
+          },
+          apply: applyTheme,
+        };
+
+        applyTheme(window.__theme.mode());
+
+        if (!window.__themeBound) {
+          window.__themeBound = true;
+
+          /*
+           * 换页后立刻补回被抹掉的状态。
+           * astro:after-swap 在 DOM 替换完成、绘制之前触发，正是官方推荐
+           * 处理「换页后要保持的状态」（比如暗色模式）的时机。
+           */
+          document.addEventListener('astro:after-swap', function () {
+            root.classList.add('js');
+            applyTheme(window.__theme.mode());
+          });
+
+          // 系统主题变化时跟随 —— 但用户手动选过就尊重用户的选择
+          window
+            .matchMedia('(prefers-color-scheme: dark)')
+            .addEventListener('change', function () {
+              if (!storedMode()) applyTheme('auto');
+            });
         }
       })();
     </script>

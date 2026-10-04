@@ -2,13 +2,22 @@
   /**
    * ThemeToggle.svelte · 亮色 / 暗色 / 跟随系统 三态循环
    * --------------------------------------------------------------------------
-   * 首屏的判定在 BaseLayout 的行内脚本里完成（避免闪白），
-   * 这里只负责挂载后读取状态、切换时写回 localStorage。
+   * 首屏判定与「换页后补回」都在 BaseLayout 的行内脚本里完成（避免闪白），
+   * 这里只负责读取状态、把用户的选择写回 localStorage。
+   *
+   * 真正的渲染统一交给 window.__theme.apply —— 页头脚本和这个按钮共用一份逻辑，
+   * 否则两边对「当前该是什么主题」的理解迟早会分叉。
    */
   import { onMount } from 'svelte';
   import Icon from './Icon.svelte';
 
   type Mode = 'light' | 'dark' | 'auto';
+
+  /** BaseLayout 的行内脚本挂上来的全局主题接口 */
+  interface ThemeApi {
+    mode(): Mode;
+    apply(mode: Mode): void;
+  }
 
   const ORDER: Mode[] = ['light', 'dark', 'auto'];
   const LABEL: Record<Mode, string> = {
@@ -22,34 +31,28 @@
     auto: 'monitor',
   };
 
-  const THEME_COLOR: Record<'light' | 'dark', string> = {
-    light: '#ffffff',
-    dark: '#141110',
-  };
+  function themeApi(): ThemeApi | null {
+    return (window as unknown as { __theme?: ThemeApi }).__theme ?? null;
+  }
 
   let mode = $state<Mode>('auto');
   let spinning = $state(false);
 
-  function resolved(next: Mode): 'light' | 'dark' {
-    if (next !== 'auto') return next;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-
   function apply(next: Mode) {
-    const root = document.documentElement;
-    const dark = resolved(next) === 'dark';
+    const api = themeApi();
+    if (!api) return;
+
+    try {
+      if (next === 'auto') localStorage.removeItem('theme');
+      else localStorage.setItem('theme', next);
+    } catch {
+      /* 隐私模式下写不进去，本次会话内仍然生效 */
+    }
 
     // 切换瞬间关掉全站过渡，避免整页「闪一下」
+    const root = document.documentElement;
     root.classList.add('theme-switching');
-    root.classList.toggle('dark', dark);
-    root.dataset.themeMode = next;
-
-    if (next === 'auto') localStorage.removeItem('theme');
-    else localStorage.setItem('theme', next);
-
-    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-    if (meta) meta.content = dark ? THEME_COLOR.dark : THEME_COLOR.light;
-
+    api.apply(next);
     window.setTimeout(() => root.classList.remove('theme-switching'), 80);
   }
 
@@ -63,17 +66,8 @@
   }
 
   onMount(() => {
-    const stored = localStorage.getItem('theme');
-    mode = stored === 'light' || stored === 'dark' ? stored : 'auto';
-    document.documentElement.dataset.themeMode = mode;
-
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onSystemChange = () => {
-      if (mode === 'auto') apply('auto');
-    };
-    mq.addEventListener('change', onSystemChange);
-
-    return () => mq.removeEventListener('change', onSystemChange);
+    // 状态以全局接口为准：换页/home 首次加载都由它判定
+    mode = themeApi()?.mode() ?? 'auto';
   });
 </script>
 

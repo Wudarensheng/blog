@@ -1,4 +1,6 @@
 // @ts-check
+import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import svelte from '@astrojs/svelte';
@@ -10,11 +12,84 @@ import rehypeHeadingAnchors from './src/plugins/rehype-heading-anchors.mjs';
 
 /** ⚠️ 与 `src/config.ts` 中的 `site.url` 保持一致（sitemap / RSS 需要绝对地址） */
 const SITE = 'https://blog.wudarensheng.top';
+const POSTS_DIR = fileURLToPath(new URL('./src/content/posts', import.meta.url));
+
+/**
+ * 扫一遍文章 frontmatter，拿到每篇的 published / updated。
+ *
+ * 只读 `title` 与两个日期字段，不做完整 YAML 解析 —— 这里要的只是
+ * sitemap 的 lastmod，为它引一个 YAML 依赖不划算。
+ * 日期统一取 `updated ?? published`：改过的文章应该被重新抓取。
+ */
+function readPostDates() {
+  /** @type {Map<string, string>} slug → ISO 日期 */
+  const dates = new Map();
+  /** @type {string | null} 全站最新一篇文章的日期 */
+  let latest = null;
+
+  if (!fs.existsSync(POSTS_DIR)) return { dates, latest };
+
+  for (const file of fs.readdirSync(POSTS_DIR)) {
+    if (!/\.mdx?$/.test(file)) continue;
+
+    const raw = fs.readFileSync(path.join(POSTS_DIR, file), 'utf8');
+    const block = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1];
+    if (!block) continue;
+
+    /** @param {string} key */
+    const pick = (key) =>
+      block.match(new RegExp(`^${key}:\\s*['"]?([^'"\\r\\n]+)['"]?\\s*$`, 'm'))?.[1]?.trim();
+
+    const published = pick('published') ?? pick('date');
+    const updated = pick('updated');
+    const iso = updated ?? published;
+    if (!iso) continue;
+
+    const parsed = new Date(iso);
+    if (Number.isNaN(parsed.getTime())) continue;
+
+    dates.set(file.replace(/\.mdx?$/, ''), parsed.toISOString());
+    if (!latest || parsed.toISOString() > latest) latest = parsed.toISOString();
+  }
+
+  return { dates, latest };
+}
+
+const { dates: postDates, latest: latestPostDate } = readPostDates();
+
+/**
+ * 给 sitemap 的每条补上 lastmod。
+ *
+ * 不区分页面类型统统塞构建时间是不行的 —— 每次构建 lastmod 都变，
+ * 搜索引擎会认为这个字段不可信，进而整个忽略它，那还不如不写。
+ * 所以这里只写「真的知道」的时间：文章用文章日期，聚合页用站内最新文章日期，
+ * 其余（首页以外的固定页）留空。
+ */
+/**
+ * @param {import('@astrojs/sitemap').SitemapItem} page
+ * @returns {import('@astrojs/sitemap').SitemapItem}
+ */
+function withLastmod(page) {
+  const { pathname } = new URL(page.url);
+
+  const slug = pathname.match(/^\/posts\/(.+?)\/?$/)?.[1];
+  if (slug && postDates.has(slug)) return { ...page, lastmod: postDates.get(slug) };
+
+  const isAggregate =
+    pathname === '/' ||
+    /^\/(archive|tags|categories|page)(\/|$)/.test(pathname) ||
+    /^\/tags\/[^/]+\/$/.test(pathname) ||
+    /^\/categories\/[^/]+\/$/.test(pathname);
+
+  if (isAggregate && latestPostDate) return { ...page, lastmod: latestPostDate };
+
+  return page;
+}
 
 export default defineConfig({
   site: SITE,
 
-  integrations: [svelte(), mdx(), sitemap()],
+  integrations: [svelte(), mdx(), sitemap({ serialize: withLastmod })],
 
   prefetch: { prefetchAll: true, defaultStrategy: 'viewport' },
 

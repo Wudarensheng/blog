@@ -426,7 +426,3 @@ h2 { letter-spacing: -0.022em; }
   margin-inline: auto;
   padding-inline: var(--gutter);
 }
-
-.stack > * + * {
-  margin-top: var(--s-4);
-}

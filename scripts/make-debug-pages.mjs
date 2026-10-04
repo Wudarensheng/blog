@@ -168,5 +168,75 @@ const SCROLL_PROBE = `<style>
 
 fs.writeFileSync('dist/_scroll-probe.html', inject(home, SCROLL_PROBE));
 
-console.log('已生成 _devices / _search / _drawer / _navtest / _revealtest / _scroll-probe');
+/* 6. 主题在换页后是否还活着
+ *
+ * Astro 的 swapRootAttributes 换页时会先把当前 <html> 的所有属性删光，
+ * 再套用新文档的属性。SSR 输出的 <html> 没有 dark / js 两个类，
+ * 所以每次换页它们都会被抹掉 —— 主题掉回亮色，滚动揭示也一起停摆。
+ * 这个探针把换页前后的 <html> 状态抓出来对照。
+ */
+const THEME_PROBE = `<style>
+  #probe {
+    position: fixed; inset: auto 0 0 0; z-index: 99999; margin: 0; padding: 10px 12px;
+    background: #0b0b0b; color: #eee; font: 12px/1.65 ui-monospace, monospace; white-space: pre;
+  }
+</style>
+<pre id="probe">运行中…</pre>
+<script>
+(function () {
+  try { localStorage.setItem('theme', 'dark'); } catch (e) {}
+  var root = document.documentElement;
+  root.classList.add('dark');   // 首次加载的正常状态（行内脚本干的）
+
+  var rows = [];
+
+  function snap(tag) {
+    rows.push(
+      tag +
+      '\\n  class      = ' + JSON.stringify(root.className) +
+      '\\n  有 dark 吗 = ' + root.classList.contains('dark') +
+      '\\n  有 js 吗   = ' + root.classList.contains('js') +
+      '\\n  themeMode  = ' + root.dataset.themeMode +
+      '\\n  body 背景  = ' + getComputedStyle(document.body).backgroundColor
+    );
+  }
+
+  // 换页会把 body 整个换掉，探针的 <pre> 也没了，所以每次都要重建再重绘。
+  // 监听器挂在 document 上，document 本身不随换页更换，闭包里的 rows 一直在。
+  function render() {
+    var el = document.getElementById('probe');
+    if (!el) {
+      el = document.createElement('pre');
+      el.id = 'probe';
+      el.style.cssText = 'position:fixed;inset:auto 0 0 0;z-index:99999;margin:0;padding:10px 12px;' +
+        'background:#0b0b0b;color:#eee;font:12px/1.65 ui-monospace,monospace;white-space:pre';
+      document.body.appendChild(el);
+    }
+    el.textContent = rows.join('\\n\\n');
+  }
+
+  snap('① 换页前');
+
+  document.addEventListener('astro:after-swap', function () {
+    snap('② astro:after-swap 刚触发');
+  });
+  document.addEventListener('astro:page-load', function () {
+    snap('③ astro:page-load（换页完成）');
+    render();
+  });
+
+  render();
+
+  setTimeout(function () {
+    var link = [].slice.call(document.querySelectorAll('.links a'))
+      .filter(function (a) { return a.getAttribute('href') === '/friends/'; })[0];
+    if (!link) { rows.push('找不到 /friends/ 链接'); render(); return; }
+    link.click();
+  }, 800);
+})();
+</script>`;
+
+fs.writeFileSync('dist/_theme-probe.html', inject(home, THEME_PROBE));
+
+console.log('已生成 _devices / _search / _drawer / _navtest / _revealtest / _scroll-probe / _theme-probe');
 
