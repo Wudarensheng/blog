@@ -67,13 +67,38 @@ check(
   `${(homeHtml.match(/class="nav-link|nav-drop-trigger"/g) ?? []).length} 项`,
 );
 
+console.log('\n[友链] 每条都要真的有链接');
 const friendsHtml = read('friends/index.html');
-check('5 条友链全部渲染', (friendsHtml.match(/class="friend card/g) ?? []).length === 5);
+const friendTags = friendsHtml.match(/<a[^>]*class="friend card[^"]*"[^>]*>/g) ?? [];
+check('友链卡片已渲染', friendTags.length > 0, `${friendTags.length} 条`);
+
+/*
+ * 这条守卫来自一个真实事故：友链数据从 Fuwari 复制过来时字段名是 link，
+ * 而主题读的是 href，于是 href 为 undefined —— <a> 渲染出来没有 href，
+ * 点了毫无反应，页面构建、类型检查、其它自检全都不会报错。
+ */
+const friendHrefs = friendTags.map((tag) => tag.match(/\shref="([^"]*)"/)?.[1] ?? '');
+const brokenLinks = friendHrefs.filter((h) => !/^https?:\/\/\S+$/.test(h));
+check(
+  '每条友链都有可用的 http(s) 地址',
+  brokenLinks.length === 0,
+  brokenLinks.length ? `${brokenLinks.length} 条没有链接：${friendHrefs.filter((h) => !/^https?:/.test(h)).join(' | ') || '(空)'}` : '',
+);
+check(
+  '友链都开了新标签页',
+  friendTags.every((tag) => tag.includes('target="_blank"')),
+);
 
 const aboutHtml = read('about/index.html');
 check('关于页有真实自我介绍', aboutHtml.includes('精神状态良好的神人初中生'));
-check('关于页有技术栈', aboutHtml.includes('Astro') && aboutHtml.includes('Fuwari') && aboutHtml.includes('Cloudflare'));
-check('关于页有仓库链接', aboutHtml.includes('Wudarensheng/blog.wudarensheng.top'));
+check(
+  '关于页有技术栈',
+  aboutHtml.includes('Astro') && aboutHtml.includes('Cloudflare'),
+);
+check(
+  '关于页有仓库链接',
+  /github\.com\/Wudarensheng\/[\w.-]+/.test(aboutHtml),
+);
 
 check('Bing 站点验证文件已迁移', fs.existsSync(path.join(DIST, 'BingSiteAuth.xml')));
 check('头像已本地化', fs.existsSync(path.join(DIST, 'avatar.jpg')));

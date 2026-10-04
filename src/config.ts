@@ -44,10 +44,10 @@ export interface NavLink {
    -------------------------------------------------------------------------- */
 export const site = {
   url: 'https://blog.wudarensheng.top',
-  title: 'Wudarensheng blog',
-  subtitle: '分享科技与技术与实践',
+  title: '无大人生的博客',
+  subtitle: 'Hello',
   description:
-    '分享科技与技术与实践。记录白嫖过的免费服务、折腾过的云函数，以及踩过的坑。',
+    '无大人生的博客，啥都有',
   /** 站点语言 */
   lang: 'zh-CN',
 } as const;
@@ -125,8 +125,8 @@ export const sidebar = {
     title: '公告',
     /** 支持一组段落 */
     content: [
-      '本站基于 Astro + Svelte 重写，主题「橙白」。',
-      '全站没有外部字体、没有统计脚本、没有广告。',
+      '本站已基于Astro + Svelte重构，使用了自制（实则AI）的全新博客主题。',
+      
     ],
     accent: 'orange' as Accent,
   },
@@ -185,44 +185,91 @@ export const comments = {
    -------------------------------------------------------------------------- */
 export interface FriendLink {
   name: string;
+  /** 站点地址 */
   href: string;
   avatar: string;
   desc: string;
 }
 
-/** 迁移自 Fuwari 的 src/components/FriendsData.astro */
-export const friends: FriendLink[] = [
+/**
+ * 写友链时允许用的输入格式。
+ *
+ * `link` 与 `href` 等价：Fuwari 的 FriendsData.astro 用的是 `link`，
+ * 而从那边复制数据过来是最常见的用法。如果只认 `href`，粘贴过来的条目会
+ * 静默失去链接 —— `<a href={undefined}>` 渲染出来就是个没有 href 的锚点，
+ * 点了毫无反应，而且不报任何错。（这个坑真实发生过。）
+ */
+export type FriendLinkInput = Omit<FriendLink, 'href'> & {
+  href?: string;
+  link?: string;
+};
+
+/** 把 link / href 归一化成 href */
+export function normalizeFriends(list: FriendLinkInput[]): FriendLink[] {
+  return list.map(({ link, href, ...rest }) => ({
+    ...rest,
+    href: href ?? link ?? '',
+  }));
+}
+
+/** 迁移自 Fuwari 的 src/components/FriendsData.astro（那边的字段叫 link，这里两种都认） */
+export const friends: FriendLink[] = normalizeFriends([
   {
-    name: 'THW’s Blog',
-    href: 'https://blog.tianhw.top',
-    avatar: 'https://image.tianhw.top/avatar.webp',
-    desc: '前途似海，来日方长',
-  },
-  {
-    name: 'Acofork Blog',
-    href: 'https://2x.nz',
-    avatar: 'https://q2.qlogo.cn/headimg_dl?dst_uin=2726730791&spec=0',
-    desc: '爱你所爱~ ❤',
-  },
-  {
-    name: 'GuYang17’s Blog',
-    href: 'https://guyang17.github.io',
-    avatar: 'https://s1.imagehub.cc/images/2025/10/02/4298d9dec11238bcaab7e2c37c25b204.png',
-    desc: '指针所向即天涯，内存深处是故乡',
-  },
-  {
-    name: 'UpXuu’s blog',
-    href: 'https://upxuu.com',
-    avatar: 'https://upxuu.com/images/20260214145619.jpg',
-    desc: '逐光而上！',
-  },
-  {
-    name: '他说',
-    href: 'https://090909.top',
-    avatar: 'https://090909.top/assets/images/logo.ico',
-    desc: '梁栋烨的博客网站。',
-  },
-];
+		name: "THW’s Blog",
+		avatar: "https://image.tianhw.top/avatar.webp",
+		link: "https://blog.tianhw.top",
+		desc: "前途似海，来日方长",
+	},
+	{
+		name: "Acofork Blog",
+		avatar: "https://q2.qlogo.cn/headimg_dl?dst_uin=2726730791&spec=0",
+		link: "https://2x.nz",
+		desc: " 爱你所爱~ ❤ ",
+	},
+	{
+		name: "GuYang17's Blog",
+		avatar:
+			"https://s1.imagehub.cc/images/2025/10/02/4298d9dec11238bcaab7e2c37c25b204.png",
+		link: "https://guyang17.github.io",
+		desc: "指针所向即天涯，内存深处是故乡",
+	},
+	{
+		name: "UpXuu's blog",
+		avatar: "https://upxuu.com/images/20260214145619.jpg",
+		link: "https://upxuu.com",
+		desc: "逐光而上！",
+	},
+    {
+		name: "他说",
+		avatar: "https://090909.top/assets/images/logo.ico",
+		link: "https://090909.top",
+		desc: "梁栋烨的博客网站。",
+	},
+    {
+		name: "Brandon's Blog",
+		avatar: "https://cdn.oopss.top/icon.jpg",
+		link: "https://blog.oopss.top",
+		desc: "Brandon 的个人博客，分享技术与生活",
+	},
+    {
+		name: "lcrworld",
+		avatar: "https://lcrworld.xyz/default-avatar.jpeg",
+		link: "https://lcrworld.xyz",
+		desc: "分享技术、生活与思考",
+	},
+    {
+		name: "JunbXの小作坊",
+		avatar: "https://junbx.cn/img-me.png",
+		link: "https://junbx.cn",
+		desc: "JunbX的个人博客，记录思考与学习，分享前沿技术",
+	},
+	{
+		name: "xf_blog",
+		avatar: "https://xiaofen.us.ci/raw/xfcnl/xfcnl.github.io/main/image/MEITU_20260128_220225596.jpg",
+		link: "https://xfchannel.top",
+		desc: "立志用 cloudflare workers，GitHub pages 和 vercel 做出整个互联网的up（虽然不会成功",
+	},
+]);
 
 /** 申请友链时展示给对方的站点信息 */
 export const friendApplication = {
