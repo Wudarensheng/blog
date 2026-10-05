@@ -48,6 +48,8 @@
     busy = true;
     try {
       await fn();
+    } catch {
+      /* 失败时保留表单；错误信息由父组件统一提示 */
     } finally {
       busy = false;
     }

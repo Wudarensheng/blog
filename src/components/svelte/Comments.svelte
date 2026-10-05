@@ -53,12 +53,74 @@
   let adminItems = $state<CommentDto[]>([]);
   let adminLoading = $state(false);
 
+  let turnstileEl = $state<HTMLDivElement | null>(null);
+  let turnstileToken = $state('');
+  let turnstileWidget: string | null = null;
+  let turnstileLoading: Promise<void> | null = null;
+
   onMount(() => {
     me = cachedUser();
     isAdmin = cachedIsAdmin();
     if (hasSession()) void refreshMe();
     void load(1);
   });
+
+  // 登录后在评论框里渲染 Turnstile 部件；发帖与回复共用一个 token
+  $effect(() => {
+    if (!commentClient.turnstileSiteKey || !me) return;
+    const el = turnstileEl;
+    if (!el) return;
+    void mountTurnstile(el);
+  });
+
+  function loadTurnstile(): Promise<void> {
+    if (typeof window === 'undefined') return Promise.resolve();
+    if (window.turnstile) return Promise.resolve();
+    if (turnstileLoading) return turnstileLoading;
+    turnstileLoading = new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('turnstile script failed'));
+      document.head.appendChild(script);
+    });
+    return turnstileLoading;
+  }
+
+  async function mountTurnstile(el: HTMLDivElement): Promise<void> {
+    try {
+      await loadTurnstile();
+      if (!window.turnstile || turnstileWidget) return;
+      turnstileWidget = window.turnstile.render(el, {
+        sitekey: commentClient.turnstileSiteKey,
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+        callback: (token) => {
+          turnstileToken = token;
+        },
+        'expired-callback': () => {
+          turnstileToken = '';
+        },
+        'error-callback': () => {
+          turnstileToken = '';
+        },
+      });
+    } catch {
+      notice = { kind: 'err', text: '人机验证加载失败，请刷新页面重试' };
+    }
+  }
+
+  function resetTurnstile(): void {
+    turnstileToken = '';
+    if (turnstileWidget && window.turnstile) window.turnstile.reset(turnstileWidget);
+  }
+
+  function teardownTurnstile(): void {
+    if (turnstileWidget && window.turnstile) window.turnstile.remove(turnstileWidget);
+    turnstileWidget = null;
+    turnstileToken = '';
+  }
 
   async function refreshMe(): Promise<void> {
     try {
@@ -99,6 +161,7 @@
 
   async function doLogout(): Promise<void> {
     await doLogoutApi();
+    teardownTurnstile();
     me = null;
     isAdmin = false;
     adminOpen = false;
@@ -118,13 +181,14 @@
     busy = true;
     notice = null;
     try {
-      const created = await createComment(postId, content);
+      const created = await createComment(postId, content, null, turnstileToken);
       tree = [created, ...tree];
       draft = '';
     } catch (e) {
       notice = { kind: 'err', text: friendlyError(e) };
     } finally {
       busy = false;
+      resetTurnstile();
     }
   }
 
@@ -138,26 +202,43 @@
   }
 
   async function submitReply(parent: CommentDto, content: string): Promise<void> {
-    const created = await createComment(postId, content, parent.id);
-    const target = findNode(tree, parent.id);
-    if (target) (target.replies ??= []).push(created);
-    else tree = [created, ...tree];
+    try {
+      const created = await createComment(postId, content, parent.id, turnstileToken);
+      const target = findNode(tree, parent.id);
+      if (target) (target.replies ??= []).push(created);
+      else tree = [created, ...tree];
+    } catch (e) {
+      notice = { kind: 'err', text: friendlyError(e) };
+      throw e;
+    } finally {
+      resetTurnstile();
+    }
   }
 
   async function submitEdit(node: CommentDto, content: string): Promise<void> {
-    const updated = await updateComment(node.id, content);
-    node.content = updated.content;
-    node.updatedAt = updated.updatedAt;
-    node.editedAt = updated.editedAt;
+    try {
+      const updated = await updateComment(node.id, content);
+      node.content = updated.content;
+      node.updatedAt = updated.updatedAt;
+      node.editedAt = updated.editedAt;
+    } catch (e) {
+      notice = { kind: 'err', text: friendlyError(e) };
+      throw e;
+    }
   }
 
   async function removeNode(node: CommentDto): Promise<void> {
     if (!confirm('确定删除这条评论吗？')) return;
-    await deleteComment(node.id);
-    // 后端软删除：本地同步为墓碑，保留其下的回复
-    node.deleted = true;
-    node.status = 'deleted';
-    node.content = '';
+    try {
+      await deleteComment(node.id);
+      // 后端软删除：本地同步为墓碑，保留其下的回复
+      node.deleted = true;
+      node.status = 'deleted';
+      node.content = '';
+    } catch (e) {
+      notice = { kind: 'err', text: friendlyError(e) };
+      throw e;
+    }
   }
 
   /* -------------------------------------------------------------- 审核 --- */
@@ -262,9 +343,15 @@
         rows="3"
         maxlength={commentClient.maxLength}
         placeholder="友善地留下你的看法…支持 Markdown，图片请使用外链"></textarea>
+      {#if commentClient.turnstileSiteKey}
+        <div class="turnstile" bind:this={turnstileEl}></div>
+      {/if}
       <div class="composer-row">
         <span class="count">{draft.length}/{commentClient.maxLength}</span>
-        <button class="btn primary" onclick={postRoot} disabled={busy || !draft.trim()}>发表评论</button>
+        <button
+          class="btn primary"
+          onclick={postRoot}
+          disabled={busy || !draft.trim() || (!!commentClient.turnstileSiteKey && !turnstileToken)}>发表评论</button>
       </div>
     </div>
   {/if}
@@ -405,6 +492,12 @@
     display: flex;
     flex-direction: column;
     gap: var(--s-2);
+  }
+
+  .turnstile {
+    display: flex;
+    align-items: center;
+    min-height: 65px;
   }
 
   textarea {

@@ -25,4 +25,6 @@ export const commentClient = {
   callbackPath: '/auth/callback/',
   /** 单条评论最大长度（与后端 MAX_COMMENT_LEN 保持一致，仅用于前端计数提示） */
   maxLength: 5000,
+  /** Cloudflare Turnstile 站点密钥（公开；留空则前端不渲染人机验证） */
+  turnstileSiteKey: env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAFOH91LsRAdOjh9X',
 };

@@ -347,8 +347,15 @@ export async function getComments(
   return apiFetch<CommentsResponse>(`/api/posts/${encodeURIComponent(postId)}/comments?${q.toString()}`);
 }
 
-export async function createComment(postId: string, content: string, parentId?: string | null): Promise<CommentDto> {
-  const payload = parentId ? { content, parentId } : { content };
+export async function createComment(
+  postId: string,
+  content: string,
+  parentId?: string | null,
+  turnstileToken?: string | null,
+): Promise<CommentDto> {
+  const payload: Record<string, unknown> = { content };
+  if (parentId) payload.parentId = parentId;
+  if (turnstileToken) payload.turnstileToken = turnstileToken;
   const res = await apiFetch<{ data: CommentDto }>(`/api/posts/${encodeURIComponent(postId)}/comments`, {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -413,6 +420,10 @@ export function friendlyError(err: unknown): string {
         return '操作过于频繁，请稍后再试';
       case 'depth_exceeded':
         return '回复层级已达上限';
+      case 'captcha_required':
+        return '请先完成人机验证';
+      case 'captcha_failed':
+        return '人机验证失败，请重试';
       case 'unauthorized':
         return '登录已过期，请重新登录';
       case 'forbidden':
