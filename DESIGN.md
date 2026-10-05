@@ -284,7 +284,9 @@ box-shadow: 0 4px 14px rgba(41,34,28,.06),
 
 ### 7.3 页面切换
 
-用 Astro 的 ClientRouter（View Transitions）接管站内跳转。导航栏、移动端抽屉、页脚和几个全局岛屿都标了 `transition:persist`，切页时不重新渲染也不重新下载脚本，只有主内容被替换。
+用 Astro 的 ClientRouter（View Transitions）接管站内跳转。只有标了 `transition:persist` 的**全局群岛**（进度条、搜索、灯箱、回到顶部、HeaderBehavior）跨页存活、不重新下载脚本；导航栏、抽屉、页脚是每页重新 SSR 的普通组件，随主内容一起被替换。
+
+> `transition:persist` 只对 HTML 元素和群岛生效 —— 放在普通 Astro 组件上不会生成 `data-astro-transition-persist`，指令被直接丢掉。导航栏「每页重建」其实是想要的：`data-transparent` 要随页面变（只有首页有 Banner 才是浮层），跨页保留反而会串味。代价是 `HeaderBehavior` 里缓存的 DOM 引用会失效，所以它在每次 `astro:page-load` 后重新解析 `[data-navbar]` / `[data-drawer]` / `[data-drawer-backdrop]`。
 
 整页的默认交叉淡入是**关掉**的（`transition:animate="none"`）——主内容自己已经有一段 `page-enter` 上浮，两者叠加会显得糊。
 
@@ -449,7 +451,7 @@ box-shadow: 0 4px 14px rgba(41,34,28,.06),
 | 7.1 图片淡入 | `src/components/svelte/ImageFade.svelte` |
 | 7.1 页面进入 | `motion.css` 的 `.site-main { animation: page-enter }` |
 | 7.2 无 JS 降级 | `BaseLayout.astro` 里给 `<html>` 加 `js` 类；初始隐藏全部挂在 `html.js` 下 |
-| 7.3 页面切换 | `BaseLayout.astro` 的 `<ClientRouter />` + 各元素的 `transition:persist` |
+| 7.3 页面切换 | `BaseLayout.astro` 的 `<ClientRouter />` + 全局群岛的 `transition:persist`（导航栏 / 抽屉每页重建） |
 
 > `Reveal.svelte` 不要求在标记里写任何东西 —— 它按选择器自己去找要揭示的元素，
 > 所以 Astro 组件保持纯静态，不需要为了动画改结构。

@@ -33,7 +33,7 @@
 - 滚动揭示：卡片、侧栏、归档年份进入视口时淡入上浮，按序错峰
 - 首屏元素只位移不淡入，避免拖慢 LCP
 - 图片加载完成后淡入（正确处理「已缓存的图不会触发 load」这个坑）
-- View Transitions 页面切换，导航栏与全局岛屿 `transition:persist`，切页不闪、不重下脚本
+- View Transitions 页面切换，全局群岛 `transition:persist` 跨页存活、切页不重下脚本（导航栏 / 抽屉每页重建，保证 `data-transparent` 随页面正确）
 - **关掉 JavaScript 页面依然完整可读**；`prefers-reduced-motion` 时整个动效层停用
 - 全部动画集中在 `src/styles/motion.css`，一处可看全、一处可关掉
 

@@ -58,8 +58,13 @@ const bannerOn = hasBanner && bannerConf.enabled;
 <!doctype html>
 <!--
   页面跳转用 Astro 的 ClientRouter（View Transitions）：
-  导航栏、抽屉、页脚、各个全局岛屿都标了 transition:persist，切页时保留，
-  只有主内容重新渲染 —— 所以切页不会闪、也不会重新下载脚本。
+  各个全局岛屿（Svelte 组件）都标了 transition:persist，切页时保留，只有主内容
+  重新渲染 —— 所以切页不会闪、也不会重新下载脚本。
+
+  注意：transition:persist 只对「HTML 元素」和「群岛」生效。导航栏 / 抽屉是普通
+  Astro 组件，指令不会被转成属性，它们每页重新 SSR —— 这是刻意的，因为导航栏的
+  data-transparent 要随页面（首页有 Banner 才是浮层）变，跨页保留反而会串味。
+  为此 HeaderBehavior 每次导航后都会重新解析 DOM 引用，见该文件。
 
   整页的默认交叉淡入关掉了（transition:animate="none"）：
   主内容自己有一段 page-enter 上浮动画，两者叠加会显得糊。
@@ -176,8 +181,8 @@ const bannerOn = hasBanner && bannerConf.enabled;
 
     <div class="site">
       <ReadingProgress client:load transition:persist />
-      <Navbar transparent={bannerOn} transition:persist />
-      <MobileDrawer transition:persist />
+      <Navbar transparent={bannerOn} />
+      <MobileDrawer />
 
       <main id="main" class="site-main">
         <slot />

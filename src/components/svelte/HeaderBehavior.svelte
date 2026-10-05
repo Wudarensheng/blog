@@ -20,9 +20,9 @@
   const DELTA = 8;
 
   onMount(() => {
-    const header = document.querySelector<HTMLElement>('[data-navbar]');
-    const drawer = document.querySelector<HTMLElement>('[data-drawer]');
-    const backdrop = document.querySelector<HTMLElement>('[data-drawer-backdrop]');
+    let header: HTMLElement | null = null;
+    let drawer: HTMLElement | null = null;
+    let backdrop: HTMLElement | null = null;
 
     let restoreOverflow = '';
     let lastFocused: HTMLElement | null = null;
@@ -83,9 +83,37 @@
       lastY = Math.max(0, window.scrollY);
     };
 
+    /*
+     * 重新解析引用。
+     *
+     * 本岛屿带 transition:persist，跨页存活；但导航栏和抽屉没有（它们只是每页
+     * 重新 SSR 的普通元素 —— 而且导航栏的 data-transparent 本来就随页面变，
+     * 不该跨页保留）。ClientRouter 换页时会把 <body> 整个替换掉，于是上一步缓存
+     * 的 header/drawer/backdrop 变成被丢弃的旧节点：之后 data-hidden / data-open
+     * 全写在「空气」上，表现为「进了文章页再滚动，导航栏不再隐藏」，移动端菜单
+     * 也会点不开。所以每次导航结束都重新查询一次，并把 focusin 挪到新节点。
+     */
+    const resolve = () => {
+      header?.removeEventListener('focusin', onFocusIn);
+      header = document.querySelector<HTMLElement>('[data-navbar]');
+      drawer = document.querySelector<HTMLElement>('[data-drawer]');
+      backdrop = document.querySelector<HTMLElement>('[data-drawer-backdrop]');
+      header?.addEventListener('focusin', onFocusIn);
+    };
+
+    // astro:page-load 在「首次加载」和「每次客户端导航结束」后都会触发
+    const onPageLoad = () => {
+      resolve();
+      hidden = false;
+      if (header) header.dataset.hidden = 'false';
+      lastY = Math.max(0, window.scrollY); // 换页后重设方向基准，别拿上一页的位置判断方向
+      measure();
+    };
+
+    resolve();
     measure();
     window.addEventListener('scroll', onScroll, { passive: true });
-    header?.addEventListener('focusin', onFocusIn);
+    document.addEventListener('astro:page-load', onPageLoad);
 
     /* ------------------------------------------------- 2. 抽屉 --- */
     function openDrawer() {
@@ -165,6 +193,7 @@
     return () => {
       window.removeEventListener('scroll', onScroll);
       header?.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('astro:page-load', onPageLoad);
       document.removeEventListener('click', onDrawerClick);
       document.removeEventListener('click', onSearchClick);
       document.removeEventListener('keydown', onKeydown);
