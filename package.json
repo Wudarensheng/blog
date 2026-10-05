@@ -5,6 +5,7 @@
   "description": "橙白 — 清新克制的 Astro + Svelte 博客主题（Fuwari 式布局）",
   "license": "MIT",
   "author": "Wudarensheng",
+  "packageManager": "pnpm@11.22.0",
   "homepage": "https://github.com/Wudarensheng/blog#readme",
   "repository": {
     "type": "git",
@@ -51,6 +52,9 @@
     "github-slugger": "^2.0.0",
     "sharp": "^0.35.5",
     "svelte": "^5.57.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp", "workerd"]
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.5",

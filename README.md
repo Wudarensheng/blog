@@ -352,9 +352,34 @@ pnpm cf:dry      # 只校验配置与资源清单，不真的部署
 `html_handling` 用 `auto-trailing-slash`：Astro 默认输出 `build.format: 'directory'`（`/archive/index.html`），
 这个模式会同时接受 `/archive` 与 `/archive/` 并做 307 归一，正是这种产物需要的处理方式。
 
-> `wrangler` 是 `devDependencies` 里的依赖，`pnpm install` 时会一并装上。
-> 它带的 `workerd` 需要在 `pnpm-workspace.yaml` 的 `allowBuilds` 里放行 ——
-> pnpm 11 默认不跑依赖的安装脚本，不放行的话本地 `wrangler dev` 起不来。
+### 构建环境里的 pnpm 版本
+
+`package.json` 里钉了 `"packageManager": "pnpm@11.22.0"`。这不只是声明，而是**必需的**：
+Cloudflare 的构建镜像默认预装的是 pnpm 10，而构建脚本白名单在两个大版本之间搬过家。
+
+| 版本 | 读 `pnpm-workspace.yaml` 的 `packages` | 读 `allowBuilds` | 读 `package.json#pnpm.onlyBuiltDependencies` |
+|------|------|------|------|
+| pnpm 10 | 必需，缺了直接报 `packages field missing or empty` | 不认 | 认 |
+| pnpm 11 | 可选 | 认 | 不认（只打一条 WARN） |
+
+所以仓库里两种配置都写了，**任何一个大版本都能装上**。两份都保留的原因很实际：
+`packageManager` 决定用哪个版本，但万一构建镜像没按它走，另一份能让 pnpm 10 也不至于失败。
+
+> 白名单本身也不能省。esbuild / sharp / workerd 都要跑安装脚本落地平台二进制，
+> 而 pnpm 10 起默认不跑依赖脚本 —— 不放行的话 `sharp` 缺二进制的表现是
+> **`astro build` 的图片优化报错**，`workerd` 缺二进制则是 `wrangler dev` 起不来。
+
+### 平台上的构建命令
+
+`wrangler.jsonc` 只描述「发布什么」，不描述「怎么构建」。在 Cloudflare 控制台里需要设：
+
+| 设置 | 值 |
+|------|-----|
+| Build command | `pnpm build` |
+| Deploy command | `pnpm exec wrangler deploy` |
+
+或者把 Deploy command 直接设成 `pnpm deploy`（这个脚本本身就是 `pnpm build && wrangler deploy`），
+Build command 留空即可 —— 别让它构建两次。
 
 ---
 

@@ -1,5 +1,22 @@
-# pnpm 11 起，依赖的构建脚本白名单写在这里
-# esbuild / sharp / workerd 需要运行安装脚本来落地平台二进制文件
+# pnpm 的依赖构建脚本白名单。
+#
+# esbuild / sharp / workerd 都需要运行各自的安装脚本来落地平台二进制文件，
+# 而 pnpm 10 起默认不跑依赖的安装脚本，不放行的话：
+#   · sharp 缺二进制  → astro build 的图片优化直接失败
+#   · workerd 缺二进制 → wrangler dev 起不来
+#
+# 配置位置在 pnpm 10 → 11 之间搬过家，所以这里两种都写：
+#   · packages + package.json 的 pnpm.onlyBuiltDependencies → pnpm 10 读
+#   · allowBuilds                                          → pnpm 11 读
+# 多写的那份会被对方忽略（pnpm 11 只打一条 WARN，不影响退出码），
+# 这样无论构建环境预装的是哪个大版本都能装上。
+#
+# 顺带一提：packages 不能省。pnpm 10 会把这份文件当成工作区定义，
+# 缺 packages 字段时直接报 "packages field missing or empty" 并终止安装 ——
+# 这正是 Cloudflare 构建环境（预装 pnpm 10.11.1）第一次失败的原因。
+packages:
+  - '.'
+
 allowBuilds:
   esbuild: true
   sharp: true
