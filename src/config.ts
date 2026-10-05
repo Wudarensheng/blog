@@ -5,9 +5,10 @@
    迁移用的是一次性脚本 scripts/migrate-fuwari.mjs，源目录全程只读。
    ========================================================================== */
 
+import { commentClient } from '@/lib/comments/config';
+
 /** 橙色系三站。全站的颜色轮转都基于这三个值。 */
-export const ACCENTS = ['orange', 'amber', 'clay'] as const;
-export type Accent = (typeof ACCENTS)[number];
+export const ACCENTS = ['orange', 'amber', 'clay'] as const;export type Accent = (typeof ACCENTS)[number];
 
 /** 社交 / 友链图标的取值格式：`{图标集}:{图标名}`，由 Icon.astro 解析。 */
 export interface SocialLink {
@@ -171,13 +172,19 @@ export const posts = {
 };
 
 /* ----------------------------------------------------------------------------
-   评论。主题只预留挂载点，填上任意第三方评论系统的片段即可。
+   评论
+   —— mode='native' 用本站自建的评论（SSO 登录 + comment Worker）；
+      mode='html' 则插入任意第三方评论系统的片段。
+   具体地址与 client id 见 src/lib/comments/config.ts（可用 PUBLIC_* 环境变量覆盖）。
    -------------------------------------------------------------------------- */
 export const comments = {
-  enabled: false,
-  /** 一个返回 HTML 字符串的函数；例如 Giscus / Waline / Twikoo 的初始化片段 */
+  enabled: true,
+  /** 'native' = 自建评论；'html' = 第三方 HTML 片段 */
+  mode: 'native' as 'native' | 'html',
+  /** mode='html' 时插入的 HTML 片段；例如 Giscus / Waline / Twikoo 的初始化片段 */
   provider: '' as string,
   note: '评论系统尚未接入，这里是一个预留的挂载点。',
+  ...commentClient,
 };
 
 /* ----------------------------------------------------------------------------

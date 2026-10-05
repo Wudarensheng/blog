@@ -89,7 +89,12 @@ function withLastmod(page) {
 export default defineConfig({
   site: SITE,
 
-  integrations: [svelte(), mdx(), sitemap({ serialize: withLastmod })],
+  integrations: [
+    svelte(),
+    mdx(),
+    // /auth/*（登录回调）是转瞬即逝的中间页，不进 sitemap
+    sitemap({ serialize: withLastmod, filter: (page) => !/\/auth\//.test(page) }),
+  ],
 
   prefetch: { prefetchAll: true, defaultStrategy: 'viewport' },
 

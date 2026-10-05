@@ -1,0 +1,119 @@
+---
+/**
+ * /auth/callback · OAuth 回调页
+ * ----------------------------------------------------------------------------
+ * 纯静态页：SSO 把浏览器重定向到这里（带 ?code & ?state），由下面的客户端脚本
+ * 完成 token 交换，然后 `location.replace` 回原来的文章。用独立极简布局，
+ * 不套 BaseLayout（避免把一个转瞬即逝的中间页塞进整站导航壳）。
+ */
+import '@/styles/app.css';
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>正在登录 · 无大人生的博客</title>
+    <script is:inline>
+      try {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch {
+        /* 忽略 */
+      }
+    </script>
+  </head>
+  <body>
+    <main class="auth-wrap">
+      <div class="auth-card">
+        <div class="spinner" aria-hidden="true"></div>
+        <p id="auth-msg">正在完成登录…</p>
+        <a id="auth-back" class="auth-back" href="/" hidden>返回首页</a>
+      </div>
+    </main>
+
+    <script>
+      import { friendlyError, handleCallback } from '@/lib/comments/api';
+
+      (async () => {
+        const msg = document.getElementById('auth-msg');
+        const back = document.getElementById('auth-back');
+        const spinner = document.querySelector('.spinner');
+        try {
+          const { returnTo } = await handleCallback();
+          location.replace(returnTo || '/');
+        } catch (err) {
+          if (msg) msg.textContent = friendlyError(err);
+          if (back) back.hidden = false;
+          if (spinner) spinner.classList.add('stopped');
+        }
+      })();
+    </script>
+
+    <style>
+      .auth-wrap {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: var(--s-6);
+        background: var(--bg);
+      }
+
+      .auth-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--s-4);
+        padding: var(--gap-in-lg) var(--s-10);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-rest);
+        text-align: center;
+      }
+
+      #auth-msg {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-2);
+      }
+
+      .spinner {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 3px solid var(--orange-l);
+        border-top-color: var(--brand);
+        animation: auth-spin 0.8s linear infinite;
+      }
+
+      .spinner.stopped {
+        animation: none;
+        border-top-color: var(--clay-d);
+      }
+
+      .auth-back {
+        font-size: 0.85rem;
+        color: var(--brand);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      @keyframes auth-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .spinner {
+          animation-duration: 1.6s;
+        }
+      }
+    </style>
+  </body>
+</html>

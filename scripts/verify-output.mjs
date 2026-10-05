@@ -186,11 +186,18 @@ const toPath = (u) => decodeURIComponent(u.replace(SITE_URL, '')) || '/';
 const sitemapPaths = new Set(sitemapUrls.map(toPath));
 const builtSet = new Set(builtPages);
 
+/*
+ * 少数页面故意不进 sitemap（登录回调 /auth/*），比对时要豁免，
+ * 否则「没有漏掉已生成的页面」会误报。
+ */
+const NON_INDEXABLE = /^\/auth\//;
+const indexablePages = builtPages.filter((u) => !NON_INDEXABLE.test(u));
+
 const ghost = [...sitemapPaths].filter((u) => !builtSet.has(u));
-const missing = [...builtSet].filter((u) => !sitemapPaths.has(u));
+const missing = indexablePages.filter((u) => !sitemapPaths.has(u));
 check('没有指向不存在页面的条目', ghost.length === 0, ghost.join(', '));
 check('没有漏掉已生成的页面', missing.length === 0, missing.join(', '));
-check('条目数与页面数一致', sitemapUrls.length === builtPages.length, `${sitemapUrls.length} vs ${builtPages.length}`);
+check('条目数与页面数一致', sitemapUrls.length === indexablePages.length, `${sitemapUrls.length} vs ${indexablePages.length}`);
 
 const lastmods = (sitemapXml.match(/<lastmod>/g) ?? []).length;
 check(

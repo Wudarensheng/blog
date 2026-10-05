@@ -28,6 +28,7 @@ import LicenseCard from '@/components/post/LicenseCard.astro';
 import MobileToc from '@/components/post/MobileToc.astro';
 import PostNav from '@/components/post/PostNav.astro';
 import RelatedPosts from '@/components/post/RelatedPosts.astro';
+import Comments from '@/components/svelte/Comments.svelte';
 import ProseEnhance from '@/components/svelte/ProseEnhance.svelte';
 
 interface Props {
@@ -156,9 +157,17 @@ const tocHeadings = headings.map(({ depth, slug, text }) => ({ depth, slug, text
 
   <section class="comments card" aria-label="评论">
     {
-      commentsConf.enabled && commentsConf.provider ? (
+      commentsConf.enabled && commentsConf.mode === 'native' && (
+        <Comments client:visible postId={post.id} />
+      )
+    }
+    {
+      commentsConf.enabled && commentsConf.mode === 'html' && commentsConf.provider && (
         <div class="provider" set:html={commentsConf.provider} />
-      ) : (
+      )
+    }
+    {
+      (!commentsConf.enabled || (commentsConf.mode === 'html' && !commentsConf.provider)) && (
         <div class="placeholder">
           <Icon name="lucide:message-circle" size={22} />
           <p>{commentsConf.note}</p>
