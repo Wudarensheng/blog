@@ -9,6 +9,7 @@ import { profile, socials, site } from '@/config';
 import { accentByIndex } from '@/lib/accent';
 import Icon from '@/components/common/Icon.astro';
 import Dots from '@/components/common/Dots.astro';
+import SiteStats from '@/components/svelte/SiteStats.svelte';
 
 interface Props {
   /** 三个统计数字，按 profile.stats 的顺序传入 */
@@ -33,6 +34,8 @@ const { stats } = Astro.props;
   </div>
 
   <p class="bio">{profile.bio}</p>
+
+  <SiteStats client:idle />
 
   <ul class="stats">
     {

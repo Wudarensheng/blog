@@ -7,7 +7,7 @@
  */
 import '@/styles/app.css';
 import { ClientRouter } from 'astro:transitions';
-import { site, banner as bannerConf } from '@/config';
+import { site, banner as bannerConf, analytics } from '@/config';
 import Navbar from '@/components/layout/Navbar.astro';
 import MobileDrawer from '@/components/layout/MobileDrawer.astro';
 import SiteFooter from '@/components/layout/Footer.astro';
@@ -173,6 +173,14 @@ const bannerOn = hasBanner && bannerConf.enabled;
         }
       })();
     </script>
+
+    {/* Umami 埋点：两个实例（自建 + 云），注入到每个页面的 head */}
+    {
+      analytics.enabled &&
+        analytics.scripts.map((s) => (
+          <script is:inline defer src={s.src} data-website-id={s.websiteId}></script>
+        ))
+    }
   </head>
 
   <body data-banner={bannerOn ? 'true' : 'false'}>

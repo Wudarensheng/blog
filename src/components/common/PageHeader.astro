@@ -4,6 +4,7 @@
  */
 import Dots from '@/components/common/Dots.astro';
 import Icon from '@/components/common/Icon.astro';
+import PageViews from '@/components/svelte/PageViews.svelte';
 import type { Accent } from '@/config';
 
 interface Props {
@@ -43,6 +44,8 @@ const { title, description, crumbs = [], accent = 'clay', count } = Astro.props;
     <h1>{title}</h1>
     {count !== undefined && <span class="count">{count}</span>}
   </div>
+
+  <PageViews client:idle />
 
   {description && <p class="desc">{description}</p>}
 

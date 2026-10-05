@@ -29,6 +29,7 @@ import MobileToc from '@/components/post/MobileToc.astro';
 import PostNav from '@/components/post/PostNav.astro';
 import RelatedPosts from '@/components/post/RelatedPosts.astro';
 import Comments from '@/components/svelte/Comments.svelte';
+import PageViews from '@/components/svelte/PageViews.svelte';
 import ProseEnhance from '@/components/svelte/ProseEnhance.svelte';
 
 interface Props {
@@ -89,6 +90,8 @@ const tocHeadings = headings.map(({ depth, slug, text }) => ({ depth, slug, text
         </nav>
 
         <h1>{data.title}</h1>
+
+        <PageViews client:idle />
 
         <p class="lede">{data.description}</p>
 

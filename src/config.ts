@@ -6,6 +6,7 @@
    ========================================================================== */
 
 import { commentClient } from '@/lib/comments/config';
+import { umamiConfig } from '@/lib/umami';
 
 /** 橙色系三站。全站的颜色轮转都基于这三个值。 */
 export const ACCENTS = ['orange', 'amber', 'clay'] as const;export type Accent = (typeof ACCENTS)[number];
@@ -69,6 +70,14 @@ export const profile = {
     { label: '标签', value: 'tags' },
   ],
 };
+
+/* ----------------------------------------------------------------------------
+   访问统计（Umami）
+   —— enabled=false 时不注入埋点脚本、也不请求统计。
+   注：字段名刻意避开 `url:`（verify-output.mjs 取的是 config 里第一个 `url:`，
+       那必须是 site.url）。
+   -------------------------------------------------------------------------- */
+export const analytics = { ...umamiConfig };
 
 /* ----------------------------------------------------------------------------
    导航
