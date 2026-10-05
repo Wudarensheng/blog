@@ -170,7 +170,13 @@ export async function handleCallback(): Promise<{ returnTo: string }> {
   const error = params.get('error');
   if (error) {
     clearPkce();
-    throw new ApiError(400, error, error === 'access_denied' ? '你取消了授权' : `登录失败：${error}`);
+    const description = params.get('error_description');
+    const message =
+      error === 'access_denied'
+        ? description ||
+          '授权被拒绝。若使用 Cloudflare 登录，请确认该 OAuth 客户端可见性与你的 Cloudflare 账号一致，且已勾选 openid 权限；也可以改用 GitHub 登录。'
+        : description || `登录失败：${error}`;
+    throw new ApiError(400, error, message);
   }
 
   const code = params.get('code');
