@@ -7,6 +7,22 @@
   //
   //   pnpm build && pnpm deploy
   //
+  // ── 关于请求计费 ────────────────────────────────────────────────────────
+  // 静态资源请求是**免费且不限量**的，只有真正调到 Worker 脚本才会计费：
+  //
+  //   "Requests to static assets are free and unlimited."
+  //   "Requests are only billable if a Worker script is invoked."
+  //   https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/
+  //
+  // 本文件没有 main 字段，所以不存在会被调用的业务脚本。wrangler 打包时
+  // 会塞一个 no-op-worker.js 占位（内容就是「返回 404」），那是上传格式
+  // 要求的占位符，任何只有 assets 的配置都会生成它 —— 和这里写不写
+  // not_found_handling 无关。
+  //
+  // not_found_handling = 404-page 的处理过程，在官方路由决策图里是画在
+  // 「Asset serving」子图内部的，不经过 Worker 脚本，因此同样免费：
+  //   https://developers.cloudflare.com/workers/static-assets/routing/static-site-generation/
+  //
   "$schema": "node_modules/wrangler/config-schema.json",
 
   // ⚠️ Worker 名字决定 workers.dev 子域，也决定「部署会覆盖谁」。
@@ -19,13 +35,14 @@
   "assets": {
     "directory": "./dist",
 
-    // 未匹配到资源时返回 dist/404.html。
-    // 本主题有自定义 404 页，不用它的话 Cloudflare 会返回一个白板。
-    "not_found_handling": "404-page",
+    // 未匹配到资源时返回 dist/404.html（404 状态码）。
+    // 本主题有自定义 404 页；不写这一条的话默认是 none，
+    // 访客会拿到一个空响应的 404，自定义页面就白做了。
+    // 这是本文件与旧 Fuwari 配置的唯一实质差异。
+    "not_found_handling": "404-page"
 
-    // Astro 默认输出 build.format: 'directory'，即 /archive/index.html。
-    // auto-trailing-slash 会同时接受 /archive 和 /archive/，并做 301 归一，
-    // 正是这种产物需要的处理方式。
-    "html_handling": "auto-trailing-slash"
+    // html_handling 没有写：它的默认值就是 auto-trailing-slash，
+    // 正是 Astro build.format: 'directory'（/archive/index.html）需要的处理 ——
+    // 同时接受 /archive 与 /archive/ 并做 307 归一。写出来是冗余的。
   }
 }
